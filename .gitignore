@@ -1,0 +1,11 @@
+.idea/
+__pycache__/
+build/
+.DS_Store
+tasks.rtf
+gene2go
+*.obo
+data/*
+results/*
+output/*
+random_networks/*
