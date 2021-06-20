@@ -1,7 +1,7 @@
 import utils as utils
 from utils import read_prior_set, create_output_folder
 from os import path
-from propagation_routines import propagate_network, propagate_networks, get_genes_p_values
+from propagation_routines import propagate_network, propagate_networks, get_genes_p_values, propagate_networks_parallel
 from prior_conditions import get_condition_function
 
 
@@ -13,6 +13,7 @@ sheet_name = 'Protein_Abundance'
 random_networks_dir = 'random_networks'
 condition_function_name = 'kent_mock_no_vic_mock_24h'
 n_networks = 2
+n_processes = 4
 
 # ~~~ derived parameters ~~~
 test_name = '{}_{}'.format(condition_function_name, n_networks)
@@ -35,7 +36,8 @@ _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, prior_set_
 genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
 # Propagate using randomized networks
-_, random_networks_scores = propagate_networks(network_graph, prior_set_ids, random_networks_dir, n_networks=n_networks)
+# _, random_networks_scores = propagate_networks(network_graph, prior_set_ids, random_networks_dir, n_networks=n_networks)
+random_networks_scores = propagate_networks_parallel(network_graph, prior_set_ids, random_networks_dir, n_networks=n_networks, n_processes=n_processes)
 
 # Rank the genes in the original network compared to the random networks
 p_values = get_genes_p_values(gene_scores, random_networks_scores)

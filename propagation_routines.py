@@ -4,6 +4,8 @@ import numpy as np
 import scipy as sp
 import math
 import os
+import tqdm
+from utils import listdir_nohidden
 from time import time
 
 # Global Variables
@@ -54,11 +56,13 @@ def propagate_networks(network, prior_set=None, random_networks_dir=None, n_netw
 
     if random_networks_files:
         networks_to_process = np.min([len(random_networks_files), n_networks])
+
         for n, network_file_name in enumerate(random_networks_files[:networks_to_process]):
             print('propagating network {}'.format(n))
             H = load_file(os.path.join(random_networks_dir, network_file_name))
             matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set)
             gene_scores.append(current_gene_scores)
+
     else:
         E = network.number_of_edges()
         Q = 10
@@ -70,6 +74,33 @@ def propagate_networks(network, prior_set=None, random_networks_dir=None, n_netw
 
     return gene_indexes, np.array(gene_scores)
 
+
+def parallel_propagate(network_dir, prior_set):
+    H = load_file(network_dir)
+    matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set)
+    return current_gene_scores
+
+
+def propagate_networks_parallel(network, prior_set=None, random_networks_dir=None, n_networks=100, n_processes):
+    import multiprocessing as mp
+    from functools import partial
+    mp.set_start_method('fork')
+
+    random_networks_files = None
+    if random_networks_dir and os.path.isdir(random_networks_dir):
+        random_networks_files = listdir_nohidden(random_networks_dir)
+    gene_scores = []
+    n_networks_to_process = np.min([len(random_networks_files), n_networks])
+    pbar = tqdm.tqdm(total=n_networks_to_process)
+    network_dirs = (os.path.join(random_networks_dir, random_networks_files[i]) for i in range(n_networks_to_process))
+
+    network_dirs = (os.path.join(random_networks_dir, random_networks_files[i]) for i in range(n_networks_to_process))
+
+    with mp.Pool(processes=4) as pool:
+        gene_scores = \
+            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, prior_set=prior_set), network_dirs),
+                           total=n_networks_to_process, desc='propagating networks')]
+    return np.array(gene_scores)
 
 def save_file(file, save_dir=None, compress=True):
     import pickle, zlib
@@ -89,7 +120,6 @@ def load_file(load_dir, decompress=True):
         file = zlib.decompress(file)
     file = pickle.loads(file)
     return file
-
 
 def read_prior_sets(excel_dir, sheet_name, conditions=None):
     # xls = pd.ExcelFile(excel_dir)
