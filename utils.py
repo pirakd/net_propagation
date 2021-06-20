@@ -16,7 +16,8 @@ PROPAGATE_ALPHA = 0.9
 PROPAGATE_ITERATIONS = 200
 PROPAGATE_EPSILON = 10 ** (-4)
 
-#Convert list of prior symbols to ids
+
+# Convert list of prior symbols to ids
 def convert_symbols_to_ids(prior_symbols):
     missing_ids = []
     prior_gene_dict = {}
@@ -67,3 +68,11 @@ def create_output_folder(test_name):
     output_folder = path.join('output', test_name, time)
     os.makedirs(output_folder)
     return output_folder
+
+
+def listdir_nohidden(path):
+    file_list = []
+    for f in os.listdir(path):
+        if not f.startswith('.'):
+            file_list.append(f)
+    return file_list
