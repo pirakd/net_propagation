@@ -8,11 +8,17 @@ def get_condition_function(function_name:str):
 def kent_mock_no_vic_mock_24h(data_frame):
     expressed_in = 'Kent_24h-Mock_24h'
     not_expressed_in = 'VIC_24h-Mock_24h'
+
     pos_genes = set(data_frame[(data_frame.diffexpressed == True) & (
                 data_frame.Label == expressed_in)].Gene_Name.unique())
     neg_genes = set(data_frame[(data_frame.diffexpressed == True) & (
                 data_frame.Label == not_expressed_in)].Gene_Name.unique())
-    return list(set.difference(pos_genes, neg_genes))
+    genes = list(set.difference(pos_genes, neg_genes))
+
+    data = data_frame[(data_frame.diffexpressed == True) & (
+                data_frame.Label == expressed_in) & (data_frame.Gene_Name.isin(genes))]
+
+    return genes, data
 
 
 def kent_mock_no_vic_mock_10h(data_frame):

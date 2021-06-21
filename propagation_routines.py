@@ -13,9 +13,13 @@ PROPAGATE_ALPHA = 0.9
 PROPAGATE_ITERATIONS = 200
 PROPAGATE_EPSILON = 10 ** (-4)
 
-def propagate(seeds, matrix, gene_indexes, num_genes):
+def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes):
     F_t = np.zeros(num_genes)
-    F_t[[gene_indexes[seed] for seed in seeds if seed in gene_indexes]] = 1
+    if not propagation_input:
+        propagation_input = {x: 1 for x in seeds}
+    for seed in seeds:
+        if seed in gene_indexes:
+            F_t[gene_indexes[seed]] = propagation_input[seed]
 
     Y = PROPAGATE_ALPHA * F_t
     matrix = (1-PROPAGATE_ALPHA) * matrix
@@ -39,20 +43,21 @@ def generate_similarity_matrix(network, genes=None):
     matrix = norm_matrix * matrix * norm_matrix
     return matrix, genes
 
-def propagate_network(network, genes=None, prior_set=None):
+def propagate_network(network, propagation_input, genes=None, prior_set=None):
     matrix, genes = generate_similarity_matrix(network, genes)
 
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
     if prior_set:
-        gene_scores = propagate(prior_set, matrix, gene_indexes, num_genes)
+        gene_scores = propagate(prior_set, propagation_input, matrix, gene_indexes, num_genes)
     else:
-        gene_scores =propagate(genes, matrix, gene_indexes, num_genes)
+        gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes, num_genes=num_genes)
 
     return matrix, num_genes, gene_indexes, gene_scores
 
 
-def propagate_networks(network,  genes=None, prior_set=None, random_networks_dir=None, n_networks=100):
+def propagate_networks(network,  genes=None, prior_set=None, propagation_input=None, random_networks_dir=None,
+                       n_networks=100):
     random_networks_files = None
     if random_networks_dir and os.path.isdir(random_networks_dir):
         random_networks_files = listdir_nohidden(random_networks_dir)
@@ -64,7 +69,7 @@ def propagate_networks(network,  genes=None, prior_set=None, random_networks_dir
         for n, network_file_name in enumerate(random_networks_files[:networks_to_process]):
             print('propagating network {}'.format(n))
             H = load_file(os.path.join(random_networks_dir, network_file_name))
-            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, genes, prior_set)
+            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, genes, prior_set)
             gene_scores.append(current_gene_scores)
 
     else:
@@ -142,6 +147,10 @@ def get_genes_p_values(original_network_scores, random_networks_scores):
     n_experiments = random_networks_scores.shape[0]
     sorted_scores = np.sort(random_networks_scores, axis=0)
     gene_score_rank = np.array(
-        [np.searchsorted(sorted_scores[:, i], original_network_scores[i]) for i in range(random_networks_scores.shape[1])])
-    p_values = (n_experiments-gene_score_rank) / n_experiments
+        [np.searchsorted(sorted_scores[:, i], original_network_scores[i], side='left')
+         for i in range(random_networks_scores.shape[1])])
+    step = 1/ (n_experiments+1)
+    p_values_stepes =  np.arange(1, n_experiments+2, 1) * step
+    p_values = p_values_stepes[gene_score_rank]
+
     return p_values
