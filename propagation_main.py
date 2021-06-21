@@ -12,8 +12,8 @@ experiment_file = 'Table_S1_V1.xlsx'
 sheet_name = 'Protein_Abundance'
 random_networks_dir = 'random_networks'
 condition_function_name = 'kent_mock_no_vic_mock_24h'
-n_networks = 2
-n_processes = 4
+n_networks = 4
+n_processes = 1
 
 # ~~~ derived parameters ~~~
 test_name = '{}_{}'.format(condition_function_name, n_networks)
@@ -32,12 +32,13 @@ prior_gene_dict = utils.convert_symbols_to_ids(prior_set)
 prior_set_ids = list(prior_gene_dict.keys())
 
 # Using the graph, either run the propagation or load previously acquired propagation results
-_, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, prior_set_ids)
+_, _, genes_id_to_idx, gene_scores = propagate_network(network_graph,  prior_set=prior_set_ids)
 genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
 # Propagate using randomized networks
-# _, random_networks_scores = propagate_networks(network_graph, prior_set_ids, random_networks_dir, n_networks=n_networks)
-random_networks_scores = propagate_networks_parallel(network_graph, prior_set_ids, random_networks_dir, n_networks=n_networks, n_processes=n_processes)
+_, random_networks_scores = propagate_networks(network_graph, list(genes_id_to_idx.keys()), prior_set_ids,
+                                               random_networks_dir, n_networks=n_networks)
+# random_networks_scores = propagate_networks_parallel(network_graph, prior_set_ids, random_networks_dir, n_networks=n_networks, n_processes=n_processes)
 
 # Rank the genes in the original network compared to the random networks
 p_values = get_genes_p_values(gene_scores, random_networks_scores)

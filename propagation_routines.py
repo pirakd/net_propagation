@@ -28,15 +28,19 @@ def propagate(seeds, matrix, gene_indexes, num_genes):
 
     return F_t
 
-def generate_similarity_matrix(network):
-    genes = sorted(network.nodes)
-    matrix = nx.to_scipy_sparse_matrix(network, genes, weight=2)
+def generate_similarity_matrix(network, genes=None):
+    if not sp.sparse.issparse(network):
+        genes = sorted(network.nodes())
+        matrix = nx.to_scipy_sparse_matrix(network, genes, weight=2)
+    else:
+        matrix = network
+        assert genes, 'must enter genes id mapping to indexes when not loading them from file'
     norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).A1), format="csr")
     matrix = norm_matrix * matrix * norm_matrix
     return matrix, genes
 
-def propagate_network(network, prior_set=None):
-    matrix, genes = generate_similarity_matrix(network)
+def propagate_network(network, genes=None, prior_set=None):
+    matrix, genes = generate_similarity_matrix(network, genes)
 
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
@@ -48,10 +52,10 @@ def propagate_network(network, prior_set=None):
     return matrix, num_genes, gene_indexes, gene_scores
 
 
-def propagate_networks(network, prior_set=None, random_networks_dir=None, n_networks=100):
+def propagate_networks(network,  genes=None, prior_set=None, random_networks_dir=None, n_networks=100):
     random_networks_files = None
     if random_networks_dir and os.path.isdir(random_networks_dir):
-        random_networks_files = os.listdir(random_networks_dir)
+        random_networks_files = listdir_nohidden(random_networks_dir)
     gene_scores = []
 
     if random_networks_files:
@@ -60,7 +64,7 @@ def propagate_networks(network, prior_set=None, random_networks_dir=None, n_netw
         for n, network_file_name in enumerate(random_networks_files[:networks_to_process]):
             print('propagating network {}'.format(n))
             H = load_file(os.path.join(random_networks_dir, network_file_name))
-            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set)
+            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, genes, prior_set)
             gene_scores.append(current_gene_scores)
 
     else:
@@ -75,13 +79,14 @@ def propagate_networks(network, prior_set=None, random_networks_dir=None, n_netw
     return gene_indexes, np.array(gene_scores)
 
 
-def parallel_propagate(network_dir, prior_set):
+def parallel_propagate(network_dir=None, genes=None,  prior_set=None):
     H = load_file(network_dir)
-    matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set)
+    matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, genes, prior_set)
     return current_gene_scores
 
 
-def propagate_networks_parallel(network, prior_set=None, random_networks_dir=None, n_networks=100, n_processes):
+def propagate_networks_parallel(network, genes=None, prior_set=None,
+                                random_networks_dir=None, n_networks=100, n_processes=1):
     import multiprocessing as mp
     from functools import partial
     mp.set_start_method('fork')
@@ -89,16 +94,13 @@ def propagate_networks_parallel(network, prior_set=None, random_networks_dir=Non
     random_networks_files = None
     if random_networks_dir and os.path.isdir(random_networks_dir):
         random_networks_files = listdir_nohidden(random_networks_dir)
-    gene_scores = []
-    n_networks_to_process = np.min([len(random_networks_files), n_networks])
-    pbar = tqdm.tqdm(total=n_networks_to_process)
-    network_dirs = (os.path.join(random_networks_dir, random_networks_files[i]) for i in range(n_networks_to_process))
 
+    n_networks_to_process = np.min([len(random_networks_files), n_networks])
     network_dirs = (os.path.join(random_networks_dir, random_networks_files[i]) for i in range(n_networks_to_process))
 
     with mp.Pool(processes=4) as pool:
         gene_scores = \
-            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, prior_set=prior_set), network_dirs),
+            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, genes=genes, prior_set=prior_set), network_dirs),
                            total=n_networks_to_process, desc='propagating networks')]
     return np.array(gene_scores)
 
