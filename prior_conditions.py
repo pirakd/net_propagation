@@ -3,6 +3,10 @@ def get_condition_function(function_name:str):
         return kent_mock_no_vic_mock_24h
     elif function_name == 'kent_mock_no_vic_mock_10h':
         return kent_mock_no_vic_mock_10h
+    elif function_name == 'kent_vic_10h':
+        return kent_vic_10h
+    elif function_name == 'kent_vic_24h':
+        return kent_vic_24h
 
 
 def kent_mock_no_vic_mock_24h(data_frame):
@@ -17,7 +21,6 @@ def kent_mock_no_vic_mock_24h(data_frame):
 
     data = data_frame[(data_frame.diffexpressed == True) & (
                 data_frame.Label == expressed_in) & (data_frame.Gene_Name.isin(genes))]
-
     return genes, data
 
 
@@ -30,4 +33,17 @@ def kent_mock_no_vic_mock_10h(data_frame):
                 data_frame.Label == not_expressed_in)].Gene_Name.unique())
     return list(set.difference(pos_genes, neg_genes))
 
+def kent_vic_10h(data_frame):
+    expressed_in = 'Kent_10h-VIC_10h'
+    data = data_frame[data_frame.Label == expressed_in]
+    genes = list(data.Gene_Name)
+    data = data.drop_duplicates(subset=['Gene_Name'])
+    return genes, data
 
+
+def kent_vic_24h(data_frame):
+    expressed_in = 'Kent_24h-VIC_24h'
+    data = data_frame[data_frame.Label == expressed_in]
+    genes = list(data.Gene_Name)
+    data = data.drop_duplicates(subset=['Gene_Name'])
+    return genes, data
