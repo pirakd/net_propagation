@@ -2,15 +2,12 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 import scipy.stats
-import math
 import os
-from time import time
 from os import path
 from datetime import datetime
 import mygene
 
 mg = mygene.MyGeneInfo()
-
 # Global Variables
 PROPAGATE_ALPHA = 0.9
 PROPAGATE_ITERATIONS = 200
@@ -28,6 +25,12 @@ def convert_symbols_to_ids(prior_symbols):
             prior_gene_dict[int(result["entrezgene"])] = result["symbol"]
         else:
             missing_ids.append(result)
+
+    # delete some unrelated redundant genes names
+    if 7795 in prior_gene_dict:
+        del prior_gene_dict[7795]
+    if 100187828 in prior_gene_dict:
+        del prior_gene_dict[100187828]
 
     return prior_gene_dict
 
@@ -63,6 +66,7 @@ def read_prior_set(condition_fucntion, excel_dir, sheet_name,):
     prior_set, prior_data = condition_fucntion(data_frame)
     return prior_set, prior_data
 
+
 def bh_correction(p_values):
     p_vals_rank = scipy.stats.rankdata(p_values, 'max') - 1
     p_vals_rank_ord = scipy.stats.rankdata(p_values, 'ordinal') - 1
@@ -77,13 +81,14 @@ def bh_correction(p_values):
     adj_p_vals = p_vals_ordered[p_vals_rank]
     return adj_p_vals
 
+
 def two_sample_z_test(mu_1, mu_2, mu_diff, sd_1, sd_2, n_1, n_2):
     from numpy import sqrt, abs, round
     from scipy.stats import norm
     pooledSE = sqrt(sd_1**2/n_1 + sd_2**2/n_2)
     z = ((mu_1 - mu_2) - mu_diff)/pooledSE
     pval = 2*(1 - norm.cdf(abs(z)))
-    return round(z, 3), round(pval, 4)
+    return z, pval
 
 def create_output_folder(test_name):
     time = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
@@ -91,16 +96,20 @@ def create_output_folder(test_name):
     os.makedirs(output_folder)
     return output_folder
 
+
 def listdir_nohidden(path):
     file_list = []
     for f in os.listdir(path):
         if not f.startswith('.'):
             file_list.append(f)
     return file_list
+
+
 def load_interesting_pathways(pathways_dir):
     with open(pathways_dir, 'r') as f:
         pathways = [str.replace(str.upper(x.strip()), ' ', '_') for x in f]
     return pathways
+
 
 def load_pathways_genes(pathways_dir, interesting_pathways=None):
     with open(pathways_dir, 'r') as f:
@@ -113,6 +122,7 @@ def load_pathways_genes(pathways_dir, interesting_pathways=None):
 
     return filtered_pathways
 
+
 def get_propagation_input(prior_gene_dict, prior_data, input_type):
     if input_type == 'ones':
         inputs = {x:1 for x in prior_gene_dict.keys()}
@@ -123,8 +133,3 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
-
-if __name__ == '__main__':
-    pathways_dir = path.join('data','canonical_pathways.txt')
-    load_pathways_genes(pathways_dir)
-

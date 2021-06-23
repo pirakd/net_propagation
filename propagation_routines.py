@@ -145,15 +145,24 @@ def read_prior_sets(excel_dir, sheet_name, conditions=None):
 
     return prior_sets
 
-def get_genes_p_values(original_network_scores, random_networks_scores):
+def get_genes_p_values(original_network_scores, random_networks_scores, two_tailed=False):
 
     n_experiments = random_networks_scores.shape[0]
     sorted_scores = np.sort(random_networks_scores, axis=0)
     gene_score_rank = np.array(
         [np.searchsorted(sorted_scores[:, i], original_network_scores[i], side='left')
          for i in range(random_networks_scores.shape[1])])
-    step = 1/ (n_experiments+1)
-    p_values_stepes =  np.arange(1, n_experiments+2, 1) * step
-    p_values = p_values_stepes[gene_score_rank]
+    step = 1 / (n_experiments+1)
+    p_values_stepes = np.arange(1, n_experiments + 2, 1) * step
+    if not two_tailed:
+        p_values = p_values_stepes[gene_score_rank]
+        return p_values
+    else:
+        higher_than_half = gene_score_rank >= (n_experiments / 2)
+        p_values = np.zeros(gene_score_rank.shape)
+        p_values[np.logical_not(higher_than_half)] = p_values_stepes[gene_score_rank[np.logical_not(higher_than_half)]]
+        p_values[higher_than_half] =\
+            1-(p_values_stepes[gene_score_rank[higher_than_half]- 1 ])
+        p_values = p_values * 2
+        return p_values, higher_than_half
 
-    return p_values
