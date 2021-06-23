@@ -36,14 +36,14 @@ def kent_mock_no_vic_mock_10h(data_frame):
 def kent_vic_10h(data_frame):
     expressed_in = 'Kent_10h-VIC_10h'
     data = data_frame[data_frame.Label == expressed_in]
-    genes = list(data.Gene_Name)
     data = data.drop_duplicates(subset=['Gene_Name'])
+    genes = list(data.Gene_Name)
     return genes, data
 
 
 def kent_vic_24h(data_frame):
     expressed_in = 'Kent_24h-VIC_24h'
     data = data_frame[data_frame.Label == expressed_in]
-    genes = list(data.Gene_Name)
     data = data.drop_duplicates(subset=['Gene_Name'])
+    genes = list(data.Gene_Name)
     return genes, data

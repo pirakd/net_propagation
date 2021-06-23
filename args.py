@@ -15,7 +15,7 @@ class Args:
         self.pathway_file = 'canonical_pathways.txt'
         self.interesting_pathway_file = 'interesting_pathways.txt'
         self.random_network_file = 'random_networks'
-
+        self.n_networks = 1000
         # ~~~ derived parameters ~~~
         if test_name is None:
             self.test_name = 'classical_enrichment_{}'.format(self.condition_function_name)
@@ -30,6 +30,6 @@ class Args:
         self.experiment_file_path = path.join(self.data_dir, self.experiment_file)
         self.pathway_file_dir = path.join(self.data_dir, self.pathway_file)
         self.interesting_pathway_file_dir = path.join(self.data_dir, self.interesting_pathway_file)
-        self.random_network_dir = path.join(self.root_folder, self.random_network_file)
+        self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
     def set_condition_function(self):
         self.condition_function = get_condition_function(self.condition_function_name)

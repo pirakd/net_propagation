@@ -5,7 +5,6 @@ from propagation_routines import propagate_network, propagate_networks, get_gene
 from prior_conditions import get_condition_function
 from args import Args
 test_name = 'propagation_main'
-
 args = Args(test_name)
 
 # Read the h_sapiens network
