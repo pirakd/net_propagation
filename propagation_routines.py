@@ -9,7 +9,7 @@ from utils import listdir_nohidden
 from time import time
 
 # Global Variables
-PROPAGATE_ALPHA = 0.9
+PROPAGATE_ALPHA = 0.8
 PROPAGATE_ITERATIONS = 200
 PROPAGATE_EPSILON = 10 ** (-4)
 
@@ -22,8 +22,8 @@ def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes):
         if seed in gene_indexes:
             F_t[gene_indexes[seed]] = propagation_input[seed]
 
-    Y = PROPAGATE_ALPHA * F_t
-    matrix = (1-PROPAGATE_ALPHA) * matrix
+    Y = (1-PROPAGATE_ALPHA) * F_t
+    matrix = (PROPAGATE_ALPHA) * matrix
     for _ in range(PROPAGATE_ITERATIONS):
         F_t_1 = F_t
         F_t = matrix.dot(F_t_1) + Y
