@@ -9,7 +9,7 @@ from utils import listdir_nohidden
 from time import time
 
 # Global Variables
-PROPAGATE_ALPHA = 0.8
+PROPAGATE_ALPHA = 0.85
 PROPAGATE_ITERATIONS = 200
 PROPAGATE_EPSILON = 10 ** (-4)
 
@@ -165,4 +165,3 @@ def get_genes_p_values(original_network_scores, random_networks_scores, two_tail
             1-(p_values_stepes[gene_score_rank[higher_than_half]- 1 ])
         p_values = p_values * 2
         return p_values, higher_than_half
-
