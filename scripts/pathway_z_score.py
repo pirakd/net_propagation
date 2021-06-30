@@ -7,8 +7,8 @@ import numpy as np
 from args import Args
 import pickle as pl
 
-prior_set_conditions = ['kent_mock_no_vic_mock_24h', 'kent_vic_24h', 'kent_vic_10h']
-
+prior_set_conditions = ['kent_vic_24h', 'kent_mock_no_vic_mock_24h',  'kent_vic_10h']
+# prior_set_conditions = ['kent_mock_no_vic_mock_24h'] * 3
 test_name = 'classical_enrichment'
 args = Args(test_name)
 title = 'Protein Abundance'
@@ -25,12 +25,13 @@ for c, condition in enumerate(prior_set_conditions):
 
     # loading prior set
     prior_set, prior_data = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
-    prior_gene_dict = utils.convert_symbols_to_ids(prior_set)
-    prior_set_ids = list(prior_gene_dict.keys())
+    prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
+    prior_set_ids = list(prior_gene_dict.values())
     propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
 
     # Using the graph, either run the propagation or load previously acquired propagation results
-    _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input, prior_set=prior_set_ids)
+    _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input,
+                                                           prior_set=list(prior_gene_dict.values()))
     genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
 

@@ -6,6 +6,7 @@ import os
 from os import path
 from datetime import datetime
 import mygene
+import json
 
 mg = mygene.MyGeneInfo()
 # Global Variables
@@ -15,25 +16,54 @@ PROPAGATE_EPSILON = 10 ** (-4)
 
 
 # Convert list of prior symbols to ids
-def convert_symbols_to_ids(prior_symbols):
-    missing_ids = []
+def convert_symbols_to_ids(prior_symbols, genes_names_file_path=None):
+    if genes_names_file_path:
+        assert path.isfile(genes_names_file_path), 'Could not find {}'.format(genes_names_file_path)
+        genes_names_to_ids = load_genes_ids_from_file(prior_symbols, genes_names_file_path)
+    else:
+        genes_names_to_ids = load_genes_ids_from_net(prior_symbols)
+    return genes_names_to_ids
+
+def load_genes_ids_from_file(genes_names, names_file):
+    with open(names_file, 'r') as f:
+        all_genes_names_to_ids = json.loads(f.read())
+    genes_names_to_ids = {x:int(xx) for x,xx in all_genes_names_to_ids.items() if x in genes_names}
+    return genes_names_to_ids
+
+
+def load_genes_ids_from_net(prior_symbols):
+    missing_names = []
     prior_gene_dict = {}
 
     ncbi_query = mg.querymany(prior_symbols, scopes="symbol", fields=["entrezgene", "symbol"], species="human")
     for result in ncbi_query:
-        if "entrezgene" in result.keys():
-            prior_gene_dict[int(result["entrezgene"])] = result["symbol"]
+        if "(entrezgene" in result.keys():
+            if int(result["entrezgene"] not in [7795, 100187828]):
+                prior_gene_dict[result["symbol"]] = int(result["entrezgene"])
         else:
-            missing_ids.append(result)
+            missing_names.append(result['query'])
 
-    # delete some unrelated redundant genes names
-    if 7795 in prior_gene_dict:
-        del prior_gene_dict[7795]
-    if 100187828 in prior_gene_dict:
-        del prior_gene_dict[100187828]
+    return  prior_gene_dict
 
-    return prior_gene_dict
-
+# def convert_symbols_to_ids(prior_symbols):
+#     missing_names = []
+#     prior_gene_dict = {}
+#
+#     ncbi_query = mg.querymany(prior_symbols, scopes="symbol", fields=["entrezgene", "symbol"], species="human")
+#     for result in ncbi_query:
+#         if "entrezgene" in result.keys():
+#             prior_gene_dict[result["symbol"]] = int(result["entrezgene"])
+#         else:
+#             missing_names.append(result['query'])
+#
+#     # delete some unrelated redundant genes names
+#     if 7795 in prior_gene_dict:
+#         del prior_gene_dict[7795]
+#     if 100187828 in prior_gene_dict:
+#         del prior_gene_dict[100187828]
+#
+#     return prior_gene_dict
+#
 
 def read_network(network_filename):
     network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
@@ -125,11 +155,11 @@ def load_pathways_genes(pathways_dir, interesting_pathways=None):
 
 def get_propagation_input(prior_gene_dict, prior_data, input_type):
     if input_type == 'ones':
-        inputs = {x:1 for x in prior_gene_dict.keys()}
+        inputs = {x:1 for x in prior_gene_dict.values()}
     elif input_type is None:
-        inputs = {x:1 for x in prior_gene_dict.keys()}
+        inputs = {x:1 for x in prior_gene_dict.values()}
     elif input_type == 'abs_log2FC':
-        inputs = {x: np.abs(float(prior_data[prior_data.Gene_Name == xx]['log2FC'])) for x, xx in prior_gene_dict.items()}
+        inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['log2FC'])) for name, id in prior_gene_dict.items()}
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
