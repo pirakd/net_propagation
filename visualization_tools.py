@@ -17,8 +17,9 @@ def plot_enrichment_table(enrichment_table, direction, interesting_pathways, sav
     y_ticks = [x[:60] for x in interesting_pathways_filtered.values()]
     important_indexes = np.where(enrichment_table > 1.3)
 
-    # set low propagation scores to be negative in order to color them blue
-    enrichment_table[np.logical_not(direction)] = -enrichment_table[np.logical_not(direction)]
+    if direction is not None:
+        # set low propagation scores to be negative in order to color them blue
+        enrichment_table[np.logical_not(direction)] = -enrichment_table[np.logical_not(direction)]
 
     # set color bar size and location
     cax = inset_axes(ax,
@@ -50,11 +51,14 @@ def plot_enrichment_table(enrichment_table, direction, interesting_pathways, sav
     heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=45, horizontalalignment='right')
 
     # add square color legend
-    legend_handles = [Patch(fill =False, edgecolor='blue', label='adjusted p_value<0.05'),
-                      Patch(fill =True, color='red', label='high propagation score'),
-                      Patch(fill =True, color='blue', label='low propagation score')]
+    legend_handles = [Patch(fill =False, edgecolor='blue', label='adjusted p_value<0.05')]
+
+    if direction is not None:
+        legend_handles.append(Patch(fill =True, color='red', label='Upwards'))
+        legend_handles.append(Patch(fill =True, color='blue', label='Downwards'))
+
     # locate legend
     ax.legend(handles=legend_handles, bbox_to_anchor=[1, 0, 1, 1], ncol=1, loc='lower left', fontsize=14)
-
+    ax.set_title(title)
     fig.set_size_inches(18.5, 10.5, forward=True)
     plt.savefig(save_dir, bbox_inches='tight')
