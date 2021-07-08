@@ -1,9 +1,11 @@
 from os import path
 from utils import create_output_folder
 from prior_conditions import get_condition_function
+from datetime import datetime
+
 
 class Args:
-    def __init__(self, test_name=None):
+    def __init__(self, test_name=None, is_create_output_folder=True):
         # ~~~ general parameters ~~~
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'data'
@@ -28,6 +30,15 @@ class Args:
         self.random_network_file = 'random_networks/htt'
         self.genes_names_file = 'genes_names_to_ids'
         self.n_networks = 1000
+        self.propgation_folder = 'propgation_scores'
+        self.date = None
+
+        # propagation parameters
+        self.alpha = 0.9
+        self.n_max_iterations = 200
+        self.convergence_th = 1e-4
+
+
         # ~~~ derived parameters ~~~
         if test_name is None:
             self.test_name = 'classical_enrichment_{}'.format(self.condition_function_name)
@@ -35,7 +46,12 @@ class Args:
             self.test_name = test_name
 
         self.data_dir = path.join(self.root_folder, 'data')
-        self.output_folder = create_output_folder(self.test_name)
+        if is_create_output_folder:
+            self.output_folder, self.date = create_output_folder(self.test_name)
+        else:
+            self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
+            self.output_folder = None
+
         self.condition_function = get_condition_function(self.condition_function_name)
         # get conditions on experiment
         self.network_file = path.join(self.data_dir, self.network_file)
@@ -44,6 +60,8 @@ class Args:
         self.interesting_pathway_file_dir = path.join(self.data_dir, self.interesting_pathway_file)
         self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
         self.genes_names_file_path = path.join(self.data_dir, self.genes_names_file)
+        self.propgation_scores_path = path.join(self.root_folder, self.propgation_scores_path)
+
 
     def set_condition_function(self):
         self.condition_function = get_condition_function(self.condition_function_name)

@@ -9,3 +9,6 @@ data/*
 results/*
 output/*
 random_networks/*
+handouts/*
+untracked_files/*
+*/output/*
