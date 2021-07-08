@@ -4,11 +4,16 @@ from os import path
 from propagation_routines import propagate_network, propagate_networks, get_genes_p_values, propagate_networks_parallel
 from prior_conditions import get_condition_function
 from args import Args
+
 test_name = 'propagation_main'
 args = Args(test_name)
 
 # Read the h_sapiens network
-network_graph = utils.read_network(args.network_file)
+#network_graph = utils.read_network(args.network_file)
+
+#Read the htt network and create a graph for it
+network_graph = utils.read_network_create_graph(args.network_file, args.network_file_sheet_name)
+
 
 # loading prior set
 prior_set, prior_data = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
@@ -32,9 +37,19 @@ title = ['gene_id\tp_value\n']
 lines = ['{}\t{}\n'.format(genes_idx_to_id[i], p_values[i]) for i in range(len(p_values))]
 lines = title + lines
 
-with open(path.join(args.output_folder, 'p_values'), 'w') as f:
+with open(path.join(args.output_folder, 'p_values.txt'), 'w') as f:
     f.writelines(lines)
 
+with open(path.join(args.output_folder, 'significant_p_values.txt'), 'w') as f:
+    significant_p_values = dict()
+    significant_ids = dict()
+    for i in range(len(p_values)):
+        if (p_values[i] <= 0.05):
+            significant_p_values[i] = p_values[i]
+            significant_ids[i] = genes_idx_to_id[i]
+    significant = ['{}\t{}\n'.format(significant_ids[k], significant_p_values[k]) for k,v in significant_p_values.items()]
+    f.writelines(significant)
+
 lines = ['{}\n'.format(p) for p in prior_set_ids]
-with open(path.join(args.output_folder, 'prior_set'), 'w') as f:
+with open(path.join(args.output_folder, 'prior_set.txt'), 'w') as f:
     f.writelines(lines)

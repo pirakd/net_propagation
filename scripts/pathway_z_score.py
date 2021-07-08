@@ -6,9 +6,13 @@ from visualization_tools import plot_enrichment_table
 import numpy as np
 from args import Args
 import pickle as pl
+import matplotlib.pyplot as plt
 
-prior_set_conditions = ['kent_vic_24h', 'kent_mock_no_vic_mock_24h',  'kent_vic_10h']
-# prior_set_conditions = ['kent_mock_no_vic_mock_24h'] * 3
+use_propagation = True
+#'kent_mock_no_vic_mock_24h'
+prior_set_conditions = ['significant_genes']
+#    ['kent_vic_24h', 'kent_vic_10h']
+
 test_name = 'classical_enrichment'
 args = Args(test_name)
 title = 'Protein Abundance'
@@ -16,8 +20,9 @@ n_draws = 5000
 p_vals = list()
 adj_pvals = list()
 direction = list()
-# Read the h_sapiens network
-network_graph = utils.read_network(args.network_file)
+if use_propagation:
+    # Read the h_sapiens network
+    network_graph = utils.read_network(args.network_file)
 
 for c, condition in enumerate(prior_set_conditions):
     args.condition_function_name = prior_set_conditions[c]
@@ -29,10 +34,24 @@ for c, condition in enumerate(prior_set_conditions):
     prior_set_ids = list(prior_gene_dict.values())
     propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
 
-    # Using the graph, either run the propagation or load previously acquired propagation results
-    _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input,
-                                                           prior_set=list(prior_gene_dict.values()))
-    genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
+    if use_propagation:
+        # Using the graph, either run the propagation or load previously acquired propagation results
+        _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input,
+                                                               prior_set=list(prior_gene_dict.values()))
+        genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
+    else:
+        gene_scores = []
+        genes_id_to_idx = dict()
+        for i, (k,v) in enumerate(propagation_input.items()):
+            gene_scores.append(v)
+            genes_id_to_idx[k] = i
+        gene_scores = np.array(gene_scores)
+
+        # genes_id_to_idx = dict([(gene, index) for (index, gene) in enumerate(prior_set_ids)])
+        # genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
+        # gene_scores = np.array(propagation_input)
+        # for gene_id, score in propagation_input.items():
+        #     gene_scores[genes_id_to_idx[gene_id]] = score
 
 
     # load pathways and their related genes
@@ -45,6 +64,16 @@ for c, condition in enumerate(prior_set_conditions):
 
     total_mean = np.mean(gene_scores)
     total_sd = np.std(gene_scores, ddof=1)
+
+    for x, name in zip(genes_scores_by_patways, interesting_pathways):
+        plt.figure()
+        _, bins, _ = plt.hist(gene_scores, bins=200, density=True, alpha=0.5, label="all genes (" + str(len(gene_scores)) + ")")
+        plt.xscale('log')
+        plt.hist(x, bins, density=True, alpha=0.5, label=name + " (" + str(len(x)) + ")")
+        plt.title(condition)
+        plt.legend()
+    plt.show()
+
 
     # get p_value empirically
     mean_scores = [np.mean(x) for x in genes_scores_by_patways]

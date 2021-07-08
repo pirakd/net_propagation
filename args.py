@@ -7,14 +7,25 @@ class Args:
         # ~~~ general parameters ~~~
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'data'
-        self.network_file = 'H_sapiens.net'
-        self.experiment_file = 'Table_S1_V1.xlsx'
-        self.sheet_name = 'Protein_Abundance'
-        self.condition_function_name = 'kent_mock_no_vic_mock_24h'
+        #for htt:
+        self.network_file =  'nn1_network.xlsx'
+        #for h_sapiens:
+        #self.network_file = 'H_sapiens.net'
+        #for htt:
+        self.network_file_sheet_name = 'NN1.0ext'
+        #for htt: '
+        self.experiment_file = 'Supplementary Table 4_Significantly changing proteins_DDA+DIA_0423_2021_v8.xlsx'
+        #for h_sapiens:
+        #self.experiment_file = 'Table_S1_V1.xlsx'
+        #for htt:
+        self.sheet_name = 'Table 4B customized'
+        #for h_sapiens:
+        #self.sheet_name = 'Protein_Abundance'
+        self.condition_function_name = 'significant_genes'
         self.propagation_input_type = 'abs_log2FC'  # ones, logfc
         self.pathway_file = 'canonical_pathways.txt'
         self.interesting_pathway_file = 'interesting_pathways.txt'
-        self.random_network_file = 'random_networks'
+        self.random_network_file = 'random_networks/htt'
         self.genes_names_file = 'genes_names_to_ids'
         self.n_networks = 1000
         # ~~~ derived parameters ~~~
@@ -26,6 +37,7 @@ class Args:
         self.data_dir = path.join(self.root_folder, 'data')
         self.output_folder = create_output_folder(self.test_name)
         self.condition_function = get_condition_function(self.condition_function_name)
+        # get conditions on experiment
         self.network_file = path.join(self.data_dir, self.network_file)
         self.experiment_file_path = path.join(self.data_dir, self.experiment_file)
         self.pathway_file_dir = path.join(self.data_dir, self.pathway_file)

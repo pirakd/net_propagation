@@ -1,4 +1,4 @@
-from utils import save_file, read_network
+from utils import save_file, read_network, read_network_create_graph
 import networkx as nx
 verbosity = True
 import os
@@ -11,6 +11,8 @@ number_of_networks = 100
 
 #Read the h_sapiens network
 network_graph = read_network("data/H_sapiens.net")
+#Use this line for htt network
+#network_graph = read_network_create_graph(r'C:\Users\USER\Documents\MSc\net_propagation\net_propagation-master\net_propagation-master\data\nn1_network.xlsx', 'NN1.0ext')
 
 E = network_graph.number_of_edges()
 Q = 10

@@ -37,7 +37,7 @@ def load_genes_ids_from_net(prior_symbols):
 
     ncbi_query = mg.querymany(prior_symbols, scopes="symbol", fields=["entrezgene", "symbol"], species="human")
     for result in ncbi_query:
-        if "(entrezgene" in result.keys():
+        if "entrezgene" in result.keys():
             if int(result["entrezgene"] not in [7795, 100187828]):
                 prior_gene_dict[result["symbol"]] = int(result["entrezgene"])
         else:
@@ -68,6 +68,14 @@ def load_genes_ids_from_net(prior_symbols):
 def read_network(network_filename):
     network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
     return nx.from_pandas_edgelist(network, 0, 1, 2)
+
+def read_network_create_graph(network_filename, network_sheetname):
+    network_table = pd.read_excel(network_filename, sheet_name=network_sheetname)
+    df = pd.DataFrame(network_table, columns=['gene id a', 'gene id b'])
+    network_graph = nx.Graph()
+    for index, row in df.iterrows():
+        network_graph.add_edge(row['gene id a'], row['gene id b'], weight=1)
+    return network_graph
 
 
 def save_file(obj, save_dir=None, compress=True):
@@ -159,7 +167,8 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
     elif input_type is None:
         inputs = {x:1 for x in prior_gene_dict.values()}
     elif input_type == 'abs_log2FC':
-        inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['log2FC'])) for name, id in prior_gene_dict.items()}
+        #not absolute value
+        inputs = {id: float(prior_data[prior_data.Gene_Name == name]['log2FC']) for name, id in prior_gene_dict.items()}
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
