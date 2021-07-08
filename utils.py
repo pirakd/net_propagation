@@ -97,29 +97,6 @@ def read_prior_set(condition_fucntion, excel_dir, sheet_name,):
     return prior_set, prior_data
 
 
-def bh_correction(p_values):
-    p_vals_rank = scipy.stats.rankdata(p_values, 'max') - 1
-    p_vals_rank_ord = scipy.stats.rankdata(p_values, 'ordinal') - 1
-
-    p_values_sorted = np.zeros_like(p_vals_rank)
-    p_values_sorted[p_vals_rank_ord] = np.arange(len(p_vals_rank_ord))
-
-    p_vals = p_values * (len(p_values) /(p_vals_rank+1))
-    adj_p_vals_by_rank = p_vals[p_values_sorted]
-
-    p_vals_ordered = np.minimum(adj_p_vals_by_rank, np.minimum.accumulate(adj_p_vals_by_rank[::-1])[::-1])
-    adj_p_vals = p_vals_ordered[p_vals_rank]
-    return adj_p_vals
-
-
-def two_sample_z_test(mu_1, mu_2, mu_diff, sd_1, sd_2, n_1, n_2):
-    from numpy import sqrt, abs, round
-    from scipy.stats import norm
-    pooledSE = sqrt(sd_1**2/n_1 + sd_2**2/n_2)
-    z = ((mu_1 - mu_2) - mu_diff)/pooledSE
-    pval = 2*(1 - norm.cdf(abs(z)))
-    return z, pval
-
 def create_output_folder(test_name):
     time = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
     output_folder = path.join('output', test_name, time)
@@ -138,6 +115,7 @@ def listdir_nohidden(path):
 def load_interesting_pathways(pathways_dir):
     with open(pathways_dir, 'r') as f:
         pathways = [str.replace(str.upper(x.strip()), ' ', '_') for x in f]
+    pathways = list(dict.fromkeys(pathways))
     return pathways
 
 
@@ -146,9 +124,11 @@ def load_pathways_genes(pathways_dir, interesting_pathways=None):
         lines = [str.upper(x.strip()).split('\t') for x in f]
     pathways = {x[0]: [int(y) for y in x[2:]] for x in lines}
 
-    if interesting_pathways:
+    if interesting_pathways is not None:
         interesting_pathways = [str.upper(x) for x in interesting_pathways]
-        filtered_pathways = {x: xx for x, xx in pathways.items() if x in interesting_pathways}
+        filtered_pathways = {pathway: pathways[pathway] if pathway in pathways else [] for pathway in interesting_pathways}
+    else:
+        filtered_pathways=pathways
 
     return filtered_pathways
 
