@@ -2,36 +2,30 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 import scipy as sp
-import math
 import os
 import tqdm
-from utils import listdir_nohidden
-from time import time
+from utils import listdir_nohidden, load_file
+import scipy.sparse
+from args import Args
 
-# Global Variables
-PROPAGATE_ALPHA = 0.85
-PROPAGATE_ITERATIONS = 200
-PROPAGATE_EPSILON = 10 ** (-4)
-
-def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes):
-
+def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, args:Args):
     F_t = np.zeros(num_genes)
     if not propagation_input:
         propagation_input = {x: 1 for x in seeds}
     for seed in seeds:
         if seed in gene_indexes:
             F_t[gene_indexes[seed]] = propagation_input[seed]
-
-    Y = (1-PROPAGATE_ALPHA) * F_t
-    matrix = (PROPAGATE_ALPHA) * matrix
-    for _ in range(PROPAGATE_ITERATIONS):
+    Y = (1-args.alpha) * F_t
+    matrix = args.alpha * matrix
+    for _ in range(args.n_max_iterations):
         F_t_1 = F_t
         F_t = matrix.dot(F_t_1) + Y
 
-        if math.sqrt(sp.linalg.norm(F_t_1 - F_t)) < PROPAGATE_EPSILON:
+        if sp.linalg.norm(F_t_1 - F_t) < args.convergence_th:
             break
     F_t[[gene_indexes[seed] for seed in seeds if seed in gene_indexes]] = 0
     return F_t
+
 
 def generate_similarity_matrix(network, genes=None):
     if not sp.sparse.issparse(network):
@@ -44,23 +38,25 @@ def generate_similarity_matrix(network, genes=None):
     matrix = norm_matrix * matrix * norm_matrix
     return matrix, genes
 
-def propagate_network(network, propagation_input, genes=None, prior_set=None):
+
+def propagate_network(network, propagation_input, args:Args, genes=None, prior_set=None):
     matrix, genes = generate_similarity_matrix(network, genes)
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
     effective_prior_set = [x for x in prior_set if x in gene_indexes]
     if prior_set:
-        gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes) for x in effective_prior_set]
+        gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
         gene_scores = np.sum(np.array(gene_scores), axis=0)
         gene_scores[[gene_indexes[x] for x in effective_prior_set]] *= len(effective_prior_set) / (len(effective_prior_set)-1)
     else:
-        gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes, num_genes=num_genes)
+        gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
+                               num_genes=num_genes, args=args)
 
     return matrix, num_genes, gene_indexes, gene_scores
 
 
-def propagate_networks(network,  genes=None, prior_set=None, propagation_input=None, random_networks_dir=None,
-                       n_networks=100):
+def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagation_input=None,
+                       random_networks_dir=None, n_networks=100):
     random_networks_files = None
     if random_networks_dir and os.path.isdir(random_networks_dir):
         random_networks_files = listdir_nohidden(random_networks_dir)
@@ -72,7 +68,7 @@ def propagate_networks(network,  genes=None, prior_set=None, propagation_input=N
         for n, network_file_name in enumerate(random_networks_files[:networks_to_process]):
             print('propagating network {}'.format(n))
             H = load_file(os.path.join(random_networks_dir, network_file_name))
-            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, genes, prior_set)
+            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, args, genes, prior_set)
             gene_scores.append(current_gene_scores)
 
     else:
@@ -81,7 +77,7 @@ def propagate_networks(network,  genes=None, prior_set=None, propagation_input=N
         for n in range(n_networks):
             H = network.copy()
             nx.swap.double_edge_swap(H, nswap=Q * E, max_tries=Q * E * 2)
-            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set)
+            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set, args=args)
             gene_scores.append(current_gene_scores)
 
     return gene_indexes, np.array(gene_scores)
@@ -108,9 +104,10 @@ def propagate_networks_parallel(network, genes=None, prior_set=None,
 
     with mp.Pool(processes=4) as pool:
         gene_scores = \
-            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, genes=genes, prior_set=prior_set), network_dirs),
-                           total=n_networks_to_process, desc='propagating networks')]
+            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, genes=genes, prior_set=prior_set),
+                                                      network_dirs), total=n_networks_to_process, desc='propagating networks')]
     return np.array(gene_scores)
+
 
 def save_file(file, save_dir=None, compress=True):
     import pickle, zlib
@@ -122,46 +119,16 @@ def save_file(file, save_dir=None, compress=True):
     print('File was saved in {}'.format(save_dir))
 
 
-def load_file(load_dir, decompress=True):
-    import pickle, zlib
-    with open(load_dir, 'rb') as f:
-        file = pickle.load(f)
-    if decompress:
-        file = zlib.decompress(file)
-    file = pickle.loads(file)
-    return file
-
 def read_prior_sets(excel_dir, sheet_name, conditions=None):
     # xls = pd.ExcelFile(excel_dir)
     data_frame = pd.read_excel(excel_dir, engine='openpyxl', sheet_name=sheet_name)
 
     prior_sets = dict()
     for condition in conditions:
-        pos_genes = set(data_frame[(data_frame.diffexpressed == True) & (
+        pos_genes = set(data_frame[(data_frame.diffexpressed is True) & (
                     data_frame.Label == condition.expressed_in)].Gene_Name.unique())
-        neg_genes = set(data_frame[(data_frame.diffexpressed == True) & (
+        neg_genes = set(data_frame[(data_frame.diffexpressed is True) & (
                     data_frame.Label == condition.not_expressed_in)].Gene_Name.unique())
         prior_sets[condition.name] = list(set.difference(pos_genes, neg_genes))
 
     return prior_sets
-
-def get_genes_p_values(original_network_scores, random_networks_scores, two_tailed=False):
-
-    n_experiments = random_networks_scores.shape[0]
-    sorted_scores = np.sort(random_networks_scores, axis=0)
-    gene_score_rank = np.array(
-        [np.searchsorted(sorted_scores[:, i], original_network_scores[i], side='left')
-         for i in range(random_networks_scores.shape[1])])
-    step = 1 / (n_experiments+1)
-    p_values_stepes = np.arange(1, n_experiments + 2, 1) * step
-    if not two_tailed:
-        p_values = p_values_stepes[gene_score_rank]
-        return p_values
-    else:
-        higher_than_half = gene_score_rank >= (n_experiments / 2)
-        p_values = np.zeros(gene_score_rank.shape)
-        p_values[np.logical_not(higher_than_half)] = p_values_stepes[gene_score_rank[np.logical_not(higher_than_half)]]
-        p_values[higher_than_half] =\
-            1-(p_values_stepes[gene_score_rank[higher_than_half]- 1 ])
-        p_values = p_values * 2
-        return p_values, higher_than_half
