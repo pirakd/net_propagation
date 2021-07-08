@@ -1,8 +1,8 @@
 import utils as utils
-from utils import read_prior_set, get_propagation_input, create_output_folder
+from utils import read_prior_set, get_propagation_input
 from os import path
-from propagation_routines import propagate_network, propagate_networks, get_genes_p_values, propagate_networks_parallel
-from prior_conditions import get_condition_function
+from statistics import get_genes_p_values
+from propagation_routines import propagate_network, propagate_networks
 from args import Args
 test_name = 'propagation_main'
 args = Args(test_name)
@@ -22,7 +22,7 @@ _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagatio
 genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
 # Propagate using randomized networks
-_, random_networks_scores = propagate_networks(network_graph, list(genes_id_to_idx.keys()), prior_set_ids,
+_, random_networks_scores = propagate_networks(network_graph, args, list(genes_id_to_idx.keys()), prior_set_ids,
                                                propagation_input, args.random_networks_dir, n_networks=args.n_networks)
 
 # Rank the genes in the original network compared to the random networks

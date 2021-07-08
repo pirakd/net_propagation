@@ -1,14 +1,14 @@
 import utils as utils
 from utils import read_prior_set, load_pathways_genes, load_interesting_pathways, get_propagation_input
-from os import path, makedirs
-from propagation_routines import propagate_network, get_genes_p_values
+from os import path
+from propagation_routines import propagate_network
 from visualization_tools import plot_enrichment_table
 import numpy as np
 from args import Args
 import pickle as pl
-from statistics import empirical_mean_diff, man_whit_U_test, two_sample_z_test, bh_correction, get_stat_test_func
-test_name = path.basename(__file__).split('.')[0]
+from statistics import bh_correction, get_stat_test_func
 
+test_name = path.basename(__file__).split('.')[0]
 n_tests = 4
 normalize_by_eig_vec_cent_list = [True] * 4
 normalize_by_degree_list = [False] * 4
