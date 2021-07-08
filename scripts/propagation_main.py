@@ -1,7 +1,7 @@
 import utils as utils
 from utils import read_prior_set, get_propagation_input
 from os import path
-from statistics import get_genes_p_values
+from statistics import get_sample_p_values
 from propagation_routines import propagate_network, propagate_networks
 from args import Args
 test_name = 'propagation_main'
@@ -26,7 +26,7 @@ _, random_networks_scores = propagate_networks(network_graph, args, list(genes_i
                                                propagation_input, args.random_networks_dir, n_networks=args.n_networks)
 
 # Rank the genes in the original network compared to the random networks
-p_values = get_genes_p_values(gene_scores, random_networks_scores)
+p_values = get_sample_p_values(gene_scores, random_networks_scores)
 
 title = ['gene_id\tp_value\n']
 lines = ['{}\t{}\n'.format(genes_idx_to_id[i], p_values[i]) for i in range(len(p_values))]

@@ -32,7 +32,7 @@ def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000) -> Sta
     random_scores =\
         np.array([np.mean(elements_scores[np.random.randint(0, len(elements_scores), len(experiment_scores))]) for x in range(n_draws)])
     random_scores = np.array(random_scores).transpose()
-    p_val, direction = get_genes_p_values(mean_scores, random_scores, two_tailed=True)
+    p_val, direction = get_sample_p_values(mean_scores, random_scores, two_tailed=True)
     return StatRes(p_value=p_val[0], directionality=direction[0], name=empirical_mean_diff.name)
 
 
@@ -71,7 +71,7 @@ def bh_correction(p_values):
     return adj_p_vals
 
 
-def get_genes_p_values(original_network_scores, random_networks_scores, two_tailed=False):
+def get_sample_p_values(original_network_scores, random_networks_scores, two_tailed=False):
     if len(random_networks_scores.shape) != 2:
         random_networks_scores = random_networks_scores[:, np.newaxis]
     if not (isinstance(original_network_scores,list) or  (isinstance(original_network_scores, np.ndarray))):
