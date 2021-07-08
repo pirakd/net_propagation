@@ -1,18 +1,14 @@
 import pandas as pd
 import networkx as nx
 import numpy as np
-import scipy.stats
 import os
+import pickle as pl
 from os import path
 from datetime import datetime
 import mygene
 import json
 
 mg = mygene.MyGeneInfo()
-# Global Variables
-PROPAGATE_ALPHA = 0.9
-PROPAGATE_ITERATIONS = 200
-PROPAGATE_EPSILON = 10 ** (-4)
 
 
 # Convert list of prior symbols to ids
@@ -98,10 +94,10 @@ def read_prior_set(condition_fucntion, excel_dir, sheet_name,):
 
 
 def create_output_folder(test_name):
-    time = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
+    time = get_time()
     output_folder = path.join('output', test_name, time)
     os.makedirs(output_folder)
-    return output_folder
+    return output_folder, time
 
 
 def listdir_nohidden(path):
@@ -143,3 +139,23 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
+
+
+def get_time():
+    return datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
+
+
+def save_propagation_score(file_name, propagation_scores, prior_set, propagation_input, genes_idx_to_id, args, date= None):
+    if date is None:
+        date = args.date
+
+    # save propagation score
+    os.makedirs(args.propagation_results_dir, exist_ok=True)
+    propagation_results_path = path.join(args.propagation_results_dir, file_name)
+
+    args_dict = {'alpha': args.alpha, 'n_max_iterations': args.n_max_iterations, 'convergence_th': args.convergence_th,
+                 'date': date}
+    save_dict = {'propagation_args': args_dict, 'prior_set': prior_set, 'propagation_input': propagation_input,
+                 'gene_idx_to_id': genes_idx_to_id, 'gene_prop_scores': propagation_scores}
+    save_file(save_dict ,propagation_results_path)
+

@@ -1,5 +1,5 @@
 import utils as utils
-from utils import read_prior_set, load_pathways_genes, load_interesting_pathways, get_propagation_input
+from utils import read_prior_set, load_pathways_genes, load_interesting_pathways, get_propagation_input, load_file
 from os import path
 from propagation_routines import propagate_network
 from visualization_tools import plot_enrichment_table
@@ -52,11 +52,9 @@ for i in range(n_tests):
 
         if load_prop_results:
             propagation_file_name = '{}_{}_{}'.format(args.sheet_name, condition, str(args.alpha))
-
-            # propagation_file_name = condition
             propagation_results_path = path.join(args.propgation_scores_path, propagation_file_name)
-            with open(propagation_results_path, 'rb') as f:
-                propagation_res_dict = pl.load(f)
+            propagation_res_dict = load_file(propagation_results_path)
+
             gene_scores = np.array(propagation_res_dict['gene_prop_scores'])
             genes_idx_to_id = propagation_res_dict['gene_idx_to_id']
             genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
@@ -71,8 +69,8 @@ for i in range(n_tests):
         if normalize_by_eig_vec_cent:
             propagation_norm_file_name = '{}_{}_1'.format(args.sheet_name, condition)
             propagation_norm_res_path = path.join(args.propgation_scores_path, propagation_norm_file_name)
-            with open(propagation_norm_res_path, 'rb') as f:
-                norm_propagation_res_dict = pl.load(f)
+            norm_propagation_res_dict = load_file(propagation_norm_res_path)
+
             norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
             norm_scores = np.array(norm_propagation_res_dict['gene_prop_scores'])
             zero_normalization_genes = np.nonzero(norm_scores == 0)[0]
