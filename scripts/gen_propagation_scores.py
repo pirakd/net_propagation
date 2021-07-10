@@ -9,11 +9,11 @@ from args import Args
 import pickle as pl
 
 
-prior_set_conditions = ['kent_vic_24h', 'kent_vic_10h'] * 4
+prior_set_conditions = ['huntington'] * 3
 propagation_results_dir = path.join('output', 'propagation_results')
 args = Args(None, is_create_output_folder=False)
-sheet_names = ['Protein_Abundance','RNA'] * 2
-alpha = [0.9, 0.9, 1, 1]
+sheet_names = ['Suppl. Table 4B'] * 3
+alpha = [0.8, 0.9, 1]
 
 network_graph = utils.read_network(args.network_file)
 fc_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())

@@ -9,28 +9,27 @@ class Args:
         # ~~~ general parameters ~~~
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'data'
-        #for htt:
-        self.network_file =  'nn1_network.xlsx'
-        #for h_sapiens:
-        #self.network_file = 'H_sapiens.net'
-        #for htt:
-        self.network_file_sheet_name = 'NN1.0ext'
-        #for htt: '
-        self.experiment_file = 'Supplementary Table 4_Significantly changing proteins_DDA+DIA_0423_2021_v8.xlsx'
-        #for h_sapiens:
-        #self.experiment_file = 'Table_S1_V1.xlsx'
-        #for htt:
-        self.sheet_name = 'Table 4B customized'
-        #for h_sapiens:
-        #self.sheet_name = 'Protein_Abundance'
-        self.condition_function_name = 'significant_genes'
-        self.propagation_input_type = 'abs_log2FC'  # ones, logfc
+
+        # corona virus
+        # self.network_file = 'H_sapiens.net'
+        # self.experiment_file = 'Table_S1_V1.xlsx'
+        # self.propagation_input_type = 'abs_log2FC', ones, logfc
+        # self.condition_function_name = 'kent_mock_no_vic_mock_24h'
+
+        # Huntington
+        self.network_file = 'HD.net'
+        self.experiment_file = 'HD_scores.xlsx'
+        self.condition_function_name = 'huntington'
+        self.propagation_input_type = 'Absolute AVG Log2 Ratio' # 'abs_log2FC', ones, logfc
+        self.sheet_name = 'Protein_Abundance''Suppl. Table 4B'
+
+
         self.pathway_file = 'canonical_pathways.txt'
         self.interesting_pathway_file = 'interesting_pathways.txt'
         self.random_network_file = 'random_networks/htt'
         self.genes_names_file = 'genes_names_to_ids'
         self.n_networks = 1000
-        self.propgation_folder = 'propgation_scores'
+        self.propagation_folder = 'propagation_scores'
         self.date = None
 
         # propagation parameters
@@ -60,7 +59,7 @@ class Args:
         self.interesting_pathway_file_dir = path.join(self.data_dir, self.interesting_pathway_file)
         self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
         self.genes_names_file_path = path.join(self.data_dir, self.genes_names_file)
-        self.propgation_scores_path = path.join(self.root_folder, self.propgation_scores_path)
+        self.propgation_scores_path = path.join(self.root_folder, self.propagation_folder)
 
 
     def set_condition_function(self):

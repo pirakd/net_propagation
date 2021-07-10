@@ -7,8 +7,8 @@ def get_condition_function(function_name:str):
         return kent_vic_10h
     elif function_name == 'kent_vic_24h':
         return kent_vic_24h
-    elif function_name == 'significant_genes':
-        return significant_genes
+    elif function_name == 'huntington':
+        return huntington
 
 
 def kent_mock_no_vic_mock_24h(data_frame):
@@ -51,8 +51,9 @@ def kent_vic_24h(data_frame):
     return genes, data
 
 
-def significant_genes(data_frame):
+def huntington(data_frame):
     data = data_frame[data_frame['Notes DIA MS'] == 'Significant']
+    #data = data_frame[(data_frame.Qvalue <= 0.05) & (data_frame['Absolute AVG Log2 Ratio'] >= 0.58)]
     data = data.drop_duplicates(subset=['Gene'])
     genes = list(data.Gene)
     return genes, data

@@ -90,7 +90,7 @@ def load_file(load_dir, decompress=True):
         file = pickle.load(f)
     if decompress:
         file = zlib.decompress(file)
-    file = pickle.loads(file)
+        file = pickle.loads(file)
     return file
 
 
@@ -143,8 +143,11 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
     elif input_type is None:
         inputs = {x:1 for x in prior_gene_dict.values()}
     elif input_type == 'abs_log2FC':
-        #not absolute value
+        inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['log2FC'])) for name, id in prior_gene_dict.items()}
+    elif input_type == 'log2FC':
         inputs = {id: float(prior_data[prior_data.Gene_Name == name]['log2FC']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'Absolute AVG Log2 Ratio':
+        inputs = {id: float(prior_data[prior_data.Gene == name]['Absolute AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
@@ -159,8 +162,8 @@ def save_propagation_score(file_name, propagation_scores, prior_set, propagation
         date = args.date
 
     # save propagation score
-    os.makedirs(args.propagation_results_dir, exist_ok=True)
-    propagation_results_path = path.join(args.propagation_results_dir, file_name)
+    os.makedirs(args.propgation_scores_path, exist_ok=True)
+    propagation_results_path = path.join(args.propgation_scores_path, file_name)
 
     args_dict = {'alpha': args.alpha, 'n_max_iterations': args.n_max_iterations, 'convergence_th': args.convergence_th,
                  'date': date}
