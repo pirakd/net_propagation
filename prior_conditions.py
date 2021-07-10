@@ -7,7 +7,8 @@ def get_condition_function(function_name:str):
         return kent_vic_10h
     elif function_name == 'kent_vic_24h':
         return kent_vic_24h
-
+    elif function_name == 'huntington':
+        return huntington
 
 def kent_mock_no_vic_mock_24h(data_frame):
     expressed_in = 'Kent_24h-Mock_24h'
@@ -46,4 +47,10 @@ def kent_vic_24h(data_frame):
     data = data_frame[data_frame.Label == expressed_in]
     data = data.drop_duplicates(subset=['Gene_Name'])
     genes = list(data.Gene_Name)
+    return genes, data
+
+def huntington(data_frame):
+    data = data_frame[(data_frame.Qvalue <= 0.05) & (data_frame['Absolute AVG Log2 Ratio'] >= 0.58)]
+    data = data.drop_duplicates(subset=['Gene'])
+    genes = list(data.Gene)
     return genes, data

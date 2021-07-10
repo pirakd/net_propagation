@@ -8,6 +8,7 @@ from utils import listdir_nohidden, load_file
 import scipy.sparse
 from args import Args
 
+
 def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, args:Args):
     F_t = np.zeros(num_genes)
     if not propagation_input:

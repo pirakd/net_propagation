@@ -21,6 +21,10 @@ def plot_enrichment_table(enrichment_table, adj_p_mat, direction, interesting_pa
     if direction is not None and res_type != 'z_score':
         # set low propagation scores to be negative in order to color them blue
         enrichment_table[np.logical_not(direction)] = -enrichment_table[np.logical_not(direction)]
+        # enrichment_table[np.logical_not(direction[:, 0]), 0] = -enrichment_table[np.logical_not(direction[:, 0]), 0]
+        # enrichment_table[np.logical_not(direction[:, 2]), 2] = -enrichment_table[np.logical_not(direction[:, 2]), 2]
+        # enrichment_table[np.logical_not(direction[:, 3]), 3] = -enrichment_table[np.logical_not(direction[:, 3]), 3]
+        # enrichment_table[np.logical_not(direction[:, 5]), 5] = -enrichment_table[np.logical_not(direction[:, 5]), 5]
 
     # set color bar size and location
     cax = inset_axes(ax,
