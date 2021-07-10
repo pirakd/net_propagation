@@ -23,7 +23,7 @@ def convert_symbols_to_ids(prior_symbols, genes_names_file_path=None):
 def load_genes_ids_from_file(genes_names, names_file):
     with open(names_file, 'r') as f:
         all_genes_names_to_ids = json.loads(f.read())
-    genes_names_to_ids = {x:int(xx) for x,xx in all_genes_names_to_ids.items() if x in genes_names}
+    genes_names_to_ids = {name: int(all_genes_names_to_ids[name]) for name in genes_names if name in all_genes_names_to_ids}
     return genes_names_to_ids
 
 
@@ -39,27 +39,8 @@ def load_genes_ids_from_net(prior_symbols):
         else:
             missing_names.append(result['query'])
 
-    return  prior_gene_dict
+    return prior_gene_dict
 
-# def convert_symbols_to_ids(prior_symbols):
-#     missing_names = []
-#     prior_gene_dict = {}
-#
-#     ncbi_query = mg.querymany(prior_symbols, scopes="symbol", fields=["entrezgene", "symbol"], species="human")
-#     for result in ncbi_query:
-#         if "entrezgene" in result.keys():
-#             prior_gene_dict[result["symbol"]] = int(result["entrezgene"])
-#         else:
-#             missing_names.append(result['query'])
-#
-#     # delete some unrelated redundant genes names
-#     if 7795 in prior_gene_dict:
-#         del prior_gene_dict[7795]
-#     if 100187828 in prior_gene_dict:
-#         del prior_gene_dict[100187828]
-#
-#     return prior_gene_dict
-#
 
 def read_network(network_filename):
     network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
@@ -89,8 +70,8 @@ def load_file(load_dir, decompress=True):
 def read_prior_set(condition_fucntion, excel_dir, sheet_name,):
     # xls = pd.ExcelFile(excel_dir)
     data_frame = pd.read_excel(excel_dir, engine='openpyxl', sheet_name=sheet_name)
-    prior_set, prior_data = condition_fucntion(data_frame)
-    return prior_set, prior_data
+    prior_set, prior_data, reference_data = condition_fucntion(data_frame)
+    return prior_set, prior_data, reference_data
 
 
 def create_output_folder(test_name):
@@ -131,13 +112,15 @@ def load_pathways_genes(pathways_dir, interesting_pathways=None):
 
 def get_propagation_input(prior_gene_dict, prior_data, input_type):
     if input_type == 'ones':
-        inputs = {x:1 for x in prior_gene_dict.values()}
+        inputs = {x: 1 for x in prior_gene_dict.values()}
     elif input_type is None:
-        inputs = {x:1 for x in prior_gene_dict.values()}
+        inputs = {x: 1 for x in prior_gene_dict.values()}
     elif input_type == 'abs_log2FC':
         inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['log2FC'])) for name, id in prior_gene_dict.items()}
     elif input_type == 'Absolute AVG Log2 Ratio':
         inputs = {id: float(prior_data[prior_data.Gene == name]['Absolute AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'AVG Log2 Ratio':
+        inputs = {id: float(prior_data[prior_data.Gene == name]['AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
@@ -147,17 +130,17 @@ def get_time():
     return datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
 
 
-def save_propagation_score(file_name, propagation_scores, prior_set, propagation_input, genes_idx_to_id, args, date= None):
+def save_propagation_score(file_name, propagation_scores, prior_set, propagation_input, genes_idx_to_id, args, date=None):
     if date is None:
         date = args.date
 
     # save propagation score
-    os.makedirs(args.propgation_scores_path, exist_ok=True)
-    propagation_results_path = path.join(args.propgation_scores_path, file_name)
+    os.makedirs(args.propagation_scores_path, exist_ok=True)
+    propagation_results_path = path.join(args.propagation_scores_path, file_name)
 
     args_dict = {'alpha': args.alpha, 'n_max_iterations': args.n_max_iterations, 'convergence_th': args.convergence_th,
                  'date': date}
     save_dict = {'propagation_args': args_dict, 'prior_set': prior_set, 'propagation_input': propagation_input,
                  'gene_idx_to_id': genes_idx_to_id, 'gene_prop_scores': propagation_scores}
-    save_file(save_dict ,propagation_results_path)
+    save_file(save_dict, propagation_results_path)
 

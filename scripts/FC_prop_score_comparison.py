@@ -9,15 +9,16 @@ import pickle as pl
 from statistics import bh_correction, get_stat_test_func
 
 test_name = path.basename(__file__).split('.')[0]
-n_tests = 4
+n_tests = 2
 normalize_by_eig_vec_cent_list = [True] * 4
 normalize_by_degree_list = [False] * 4
 res_type_list = ['-log10(p)', 'z_score'] * 2
 log_of_prop_scores = True
-sheet_names_list = ['Protein_Abundance', 'Protein_Abundance', 'RNA', 'RNA']
-statistic_test_list = ['man_whit_U_test', 'two_sample_z_test']* 2
-prior_set_conditions = ['kent_vic_24h', 'kent_vic_10h']
-
+# sheet_names_list = ['Protein_Abundance', 'Protein_Abundance', 'RNA', 'RNA']
+sheet_names_list = ['Suppl. Table 4A'] * 2
+statistic_test_list = ['man_whit_U_test', 'two_sample_z_test'] * 2
+prior_set_conditions = ['huntington']
+reference_score_type = 'AVG Log2 Ratio'
 args = Args(test_name)
 load_prop_results = True
 keep_only_excel_genes = False
@@ -42,18 +43,26 @@ for i in range(n_tests):
         args.set_condition_function()
 
         # loading prior set
-        prior_set, prior_data = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
+        prior_set, prior_data, all_data = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
         prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
         prior_set_ids = list(prior_gene_dict.values())
-
         propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
-        log2fc_scores = {id: float(prior_data[prior_data.Gene_Name == name]['log2FC']) for name, id in
+
+
+
+        all_genes = list(all_data.Gene)
+        all_genes_dict = utils.convert_symbols_to_ids(all_genes, args.genes_names_file_path)
+        all_scores = get_propagation_input(all_genes_dict, all_data, reference_score_type)
+
+        # log2fc_scores = {id: float(prior_data[prior_data.Gene_Name == name]['log2FC']) for name, id in
+        #           prior_gene_dict.items()}
+        log2fc_scores = {id: float(prior_data[prior_data.Gene == name][args.propagation_input_type]) for name, id in
                   prior_gene_dict.items()}
 
         if load_prop_results:
             propagation_file_name = '{}_{}_{}'.format(args.sheet_name, condition, str(args.alpha))
-            propagation_results_path = path.join(args.propgation_scores_path, propagation_file_name)
-            propagation_res_dict = load_file(propagation_results_path)
+            propagation_results_path = path.join(args.propagation_scores_path, propagation_file_name)
+            propagation_res_dict = load_file(propagation_results_path, decompress=True)
 
             gene_scores = np.array(propagation_res_dict['gene_prop_scores'])
             genes_idx_to_id = propagation_res_dict['gene_idx_to_id']
@@ -68,8 +77,8 @@ for i in range(n_tests):
 
         if normalize_by_eig_vec_cent:
             propagation_norm_file_name = '{}_{}_1'.format(args.sheet_name, condition)
-            propagation_norm_res_path = path.join(args.propgation_scores_path, propagation_norm_file_name)
-            norm_propagation_res_dict = load_file(propagation_norm_res_path)
+            propagation_norm_res_path = path.join(args.propagation_scores_path, propagation_norm_file_name)
+            norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
 
             norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
             norm_scores = np.array(norm_propagation_res_dict['gene_prop_scores'])
@@ -94,7 +103,8 @@ for i in range(n_tests):
         interesting_pathways = load_interesting_pathways(args.interesting_pathway_file_dir)
         interesting_pathways = np.sort(interesting_pathways)
         genes_of_interesting_pathways = load_pathways_genes(args.pathway_file_dir, interesting_pathways)
-
+        # genes_of_interesting_pathways = load_pathways_genes(args.pathway_file_dir)
+        interesting_pathways = [x for x,xx in genes_of_interesting_pathways.items()]
         genes_by_pathway_filtered = [[id for id in genes_of_interesting_pathways[pathway] if id in genes_id_to_idx] for pathway
                                    in interesting_pathways]
         excel_genes_by_pathway_filtered = [[id for id in genes_of_interesting_pathways[pathway] if id in log2fc_scores] for pathway

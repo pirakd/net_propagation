@@ -12,7 +12,7 @@ import pickle as pl
 prior_set_conditions = ['huntington'] * 3
 propagation_results_dir = path.join('output', 'propagation_results')
 args = Args(None, is_create_output_folder=False)
-sheet_names = ['Suppl. Table 4B'] * 3
+sheet_names = ['Suppl. Table 4A'] * 3
 alpha = [0.8, 0.9, 1]
 
 network_graph = utils.read_network(args.network_file)
@@ -27,7 +27,7 @@ for c, condition in enumerate(prior_set_conditions):
     args.set_condition_function()
 
     # loading prior set
-    prior_set, prior_data = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
+    prior_set, prior_data, _ = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
     prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
     prior_set_ids = list(prior_gene_dict.values())
     propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
