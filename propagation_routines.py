@@ -108,28 +108,3 @@ def propagate_networks_parallel(network, genes=None, prior_set=None,
             [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, genes=genes, prior_set=prior_set),
                                                       network_dirs), total=n_networks_to_process, desc='propagating networks')]
     return np.array(gene_scores)
-
-
-def save_file(file, save_dir=None, compress=True):
-    import pickle, zlib
-    file = pickle.dumps(file)
-    if compress:
-        file = zlib.compress(file)
-    with open(save_dir, 'wb') as f:
-        pickle.dump(file, f)
-    print('File was saved in {}'.format(save_dir))
-
-
-def read_prior_sets(excel_dir, sheet_name, conditions=None):
-    # xls = pd.ExcelFile(excel_dir)
-    data_frame = pd.read_excel(excel_dir, engine='openpyxl', sheet_name=sheet_name)
-
-    prior_sets = dict()
-    for condition in conditions:
-        pos_genes = set(data_frame[(data_frame.diffexpressed is True) & (
-                    data_frame.Label == condition.expressed_in)].Gene_Name.unique())
-        neg_genes = set(data_frame[(data_frame.diffexpressed is True) & (
-                    data_frame.Label == condition.not_expressed_in)].Gene_Name.unique())
-        prior_sets[condition.name] = list(set.difference(pos_genes, neg_genes))
-
-    return prior_sets
