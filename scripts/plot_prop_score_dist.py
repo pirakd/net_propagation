@@ -1,17 +1,25 @@
 import utils as utils
 from utils import read_prior_set, load_pathways_genes, load_interesting_pathways, get_propagation_input, load_file
-from os import path
+from os import path, makedirs
 from propagation_routines import propagate_network
-from visualization_tools import plot_enrichment_table
+from os import path
 import numpy as np
 from args import Args
 import pickle as pl
-from statistics import bh_correction, get_stat_test_func
-
+from statistics import empirical_mean_diff, man_whit_U_test
 test_name = path.basename(__file__).split('.')[0]
+
+n_distributions = 5
 n_tests = 2
-normalize_by_eig_vec_cent_list = [False] * 2
-normalize_by_degree_list = [False] * 2
+normalize_by_eig_vec_cent_list = [False, True]
+normalize_by_degree_list = [False, False]
+from statistics import get_stat_test_func
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+
+
+
 res_type_list = ['-log10(p)'] * 2
 log_of_prop_scores = True
 # sheet_names_list = ['Protein_Abundance', 'Protein_Abundance', 'RNA', 'RNA']
@@ -22,7 +30,7 @@ reference_score_type_list = ['AVG Log2 Ratio','Log2FC (HD/C116)']
 args = Args(test_name)
 load_prop_results = True
 keep_only_excel_genes = False
-
+network_graph = utils.read_network(args.network_file)
 
 for i in range(n_tests):
     args.sheet_name = sheet_names_list[i]
@@ -64,8 +72,6 @@ for i in range(n_tests):
             genes_idx_to_id = propagation_res_dict['gene_idx_to_id']
             genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
         else:
-            # Read the h_sapiens network
-            network_graph = utils.read_network(args.network_file)
             # Using the graph, either run the propagation or load previously acquired propagation results
             _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input, args,
                                                                    prior_set=list(prior_gene_dict.values()))
@@ -94,98 +100,94 @@ for i in range(n_tests):
             genes_idx_to_id = {idx: id for idx, id in genes_idx_to_id.items() if
                                             id in propagation_input}
             genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
-
         # load pathways and their related genes
         interesting_pathways = load_interesting_pathways(args.interesting_pathway_file_dir)
         interesting_pathways = np.sort(interesting_pathways)
         genes_of_interesting_pathways = load_pathways_genes(args.pathway_file_dir, interesting_pathways)
-        # genes_of_interesting_pathways = load_pathways_genes(args.pathway_file_dir)
-        interesting_pathways = [x for x,xx in genes_of_interesting_pathways.items()]
-        genes_by_pathway_filtered = [[id for id in genes_of_interesting_pathways[pathway] if id in genes_id_to_idx] for pathway
-                                   in interesting_pathways]
-        excel_genes_by_pathway_filtered = [[id for id in genes_of_interesting_pathways[pathway] if id in all_reference_scores] for pathway
-                                   in interesting_pathways]
 
-        pathways_with_many_genes = [x for x, xx in enumerate(genes_by_pathway_filtered) if
-                                    (len(genes_by_pathway_filtered[x]) >= 5 and len(excel_genes_by_pathway_filtered[x]) >= 5)]
+        genes_by_pathway_filtered =  [[id for id in  genes_of_interesting_pathways[pathway] if id in genes_id_to_idx] for pathway
+                                   in interesting_pathways]
+        pathways_with_many_genes = [x for x, xx in enumerate(genes_by_pathway_filtered) if len(xx) >= 15]
         genes_by_pathway_filtered = [genes_by_pathway_filtered[x] for x in pathways_with_many_genes]
 
         # check scores of genes related to interesting pathway
         genes_scores_by_pathway = [[gene_scores[genes_id_to_idx[id]] for id in gene_set] for gene_set
                                    in genes_by_pathway_filtered]
-        all_reference_scores_by_pathway = [[all_reference_scores[id] for id in gene_set if id in all_reference_scores] for gene_set
+        degrees = network_graph.degree(weight=2)
+        degrees = {x:xx for x,xx in degrees}
+        genes_degree_by_pathway = [[degrees[id] for id in gene_set] for gene_set
+                                   in genes_by_pathway_filtered]
+
+        log2fc_scores_by_pathway = [[all_reference_scores[id] for id in gene_set if id in all_reference_scores] for gene_set
                                     in genes_by_pathway_filtered]
 
-        fc_p_vals, fc_dir, fc_z_score, prop_p_vals, prop_dir, prop_z_score = [], [], [], [], [], []
+        fc_p_vals, fc_dir, prop_p_vals, prop_dir = [], [], [], []
         for g, gene_set in enumerate(genes_by_pathway_filtered):
             random_genes = [id for id in all_reference_scores if id not in gene_set]
 
-            fc_res = statistic_test(all_reference_scores_by_pathway[g], [all_reference_scores[id] for id in random_genes])
+            fc_res = statistic_test(log2fc_scores_by_pathway[g], [all_reference_scores[id] for id in random_genes])
             fc_p_vals.append(fc_res.p_value)
-            fc_z_score.append(fc_res.z_score)
             fc_dir.append(fc_res.directionality)
 
             random_genes = [id for id in genes_id_to_idx.keys() if id not in gene_set]
-
             prop_res = statistic_test(genes_scores_by_pathway[g], [gene_scores[genes_id_to_idx[id]]
                                                                      for id in random_genes])
+            # prop_res = statistic_test(genes_degree_by_pathway[g], [degrees[id] for id in random_genes])
+
+
             prop_p_vals.append(prop_res.p_value)
-            prop_z_score.append(prop_res.z_score)
             prop_dir.append(prop_res.directionality)
 
+        sorted_pathways_by_p_value_idx = np.argsort(prop_p_vals)[:n_distributions]
+        gene_scores_log, gene_degree_log, prop_reference_degree, prop_reference_score = [], [], [], []
 
-        prop_scores_dict['direction'].append(np.array(prop_dir))
-        prop_scores_dict['p_vals'].append(np.array(prop_p_vals))
-        prop_scores_dict['z_score'].append(np.array(prop_z_score))
-        prop_scores_dict['adj_p_vals'].append(np.array(bh_correction(prop_p_vals)))
+        for g in sorted_pathways_by_p_value_idx:
+            gene_set = genes_by_pathway_filtered[g]
+            random_genes = [id for id in genes_id_to_idx.keys() if id not in gene_set]
+
+            gene_degree_log.append(np.log10(genes_degree_by_pathway[g]))
+            gene_scores_log.append(genes_scores_by_pathway[g])
+
+            prop_reference_score.append([gene_scores[genes_id_to_idx[id]] for id in random_genes])
+            prop_reference_degree.append(np.log10([degrees[id] for id in random_genes if id in degrees]))
 
 
-        fc_scores_dict['direction'].append(np.array(fc_dir))
-        fc_scores_dict['p_vals'].append(np.array(fc_p_vals))
-        fc_scores_dict['z_score'].append(np.array(fc_z_score))
-        fc_scores_dict['adj_p_vals'].append(np.array(bh_correction(fc_p_vals)))
 
-        pathways_per_condition.append(pathways_with_many_genes)
+        cols = ['Score distribution', 'Degree and Propagation Score']
+        rows = [interesting_pathways[pathways_with_many_genes[x]] for x in sorted_pathways_by_p_value_idx]
+        # create 3x1 subfigs
+
+        fig, axes = plt.subplots(nrows=n_distributions, ncols=2, figsize=(12, 8))
+        # plt.suptitle('Score Distribution, {}'.format(title))
+        for ax, col in zip(axes[0, :], cols):
+            ax.set_title(col)
+
+        for ax, row in zip(axes[:,0], rows):
+            ax.set_ylabel(row, rotation=0, size='small', ha='right')
+
+        for d in range(axes.shape[0]):
+            # create 1x3 subplots per subfig
+
+            bins = np.maximum(int(len(gene_degree_log[d]) // 2), 10)
+            axes[d, 0].hist(gene_scores_log[d], density=True, bins=bins, alpha=0.5, label ='pathway prop scores')
+            axes[d, 0].hist(prop_reference_score[d], density=True, bins=bins, alpha=0.5, label ='all genes prop scores')
+            axes[d, 0].set_xticks([])
+            axes[d, 0].set_yticks([])
+
+            handles = [mpatches.Patch(color='none', label='p value: {:.2e}'.format(prop_p_vals[sorted_pathways_by_p_value_idx[d]]))]
+            legend2 = axes[d,0].legend(handles=handles, loc=1, )
+            if d == 0:
+                legend1 = axes[d,0].legend(loc='upper left')
+                axes[d,0].add_artist(legend2)
 
 
-    ## construct the enrichment table
-    all_pathways = np.sort(list(set().union(*pathways_per_condition)))
-    all_pathways_names = [interesting_pathways[x] for x in all_pathways]
-    pathway_to_idx = {xx:x for x,xx in enumerate(all_pathways)}
-    p_vals_mat = np.ones((len(all_pathways_names), len(prior_set_conditions)*2))
-    adj_p_vals_mat = np.ones((len(all_pathways_names), len(prior_set_conditions)*2))
-    z_score_mat = np.zeros((len(all_pathways_names), len(prior_set_conditions)*2))
-    directions_mat = np.zeros((len(all_pathways_names), len(prior_set_conditions)*2))
-    rows_names = []
-    for i in range(len(prior_set_conditions)*2):
-        index = int(i//2)
-        if np.mod(i, 2):
-            p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['p_vals'][index]
-            adj_p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['adj_p_vals'][index]
-            if prop_scores_dict['direction'][index] is not None:
-                directions_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['direction'][index]
-            if prop_scores_dict['z_score'][index] is not None:
-                z_score_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['z_score'][index]
-            rows_names.append(prior_set_conditions[index] + '_prop')
-        else:
-            p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['p_vals'][index]
-            adj_p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['adj_p_vals'][index]
-            if prop_scores_dict['direction'][index] is not None:
-                directions_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] =fc_scores_dict['direction'][index]
-            if fc_scores_dict['z_score'][index] is not None:
-                z_score_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['z_score'][index]
-            rows_names.append(prior_set_conditions[index] + '_logfc')
+            axes[d, 1].scatter(gene_degree_log[d],gene_scores_log[d])
+            axes[d, 1].set_xlabel('gene degree')
+            axes[d, 1].set_ylabel('prop score')
+            axes[d, 1].set_xticks([])
+            axes[d, 1].set_yticks([])
 
-    if prop_scores_dict['direction'][index][0] is None:
-        directions_mat = None
 
-    if res_type == '-log10(p)':
-        res_mat = -np.log10(p_vals_mat)
-    elif res_type == '-log10(adj_p)':
-        res_mat = -np.log10(adj_p_vals_mat)
-    elif res_type == 'z_score':
-        res_mat = z_score_mat
-
-    fig_out_dir = path.join(args.output_folder, fig_name)
-    plot_enrichment_table(res_mat ,adj_p_vals_mat, directions_mat, all_pathways_names, fig_out_dir,
-                          experiment_names=rows_names, title=title, res_type=res_type)
+        plt.tight_layout()
+        fig_out_dir = path.join(args.output_folder, title.replace('.','')+ '{}_{}'.format(c, i))
+        plt.savefig(fig_out_dir, bbox_inches='tight')

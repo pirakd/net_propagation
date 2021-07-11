@@ -121,6 +121,10 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
         inputs = {id: float(prior_data[prior_data.Gene == name]['Absolute AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
     elif input_type == 'AVG Log2 Ratio':
         inputs = {id: float(prior_data[prior_data.Gene == name]['AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'Absolute Log2FC (HD/C116)':
+        inputs = {id: float(prior_data[prior_data.Gene == name]['Absolute Log2FC (HD/C116)']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'Log2FC (HD/C116)':
+        inputs = {id: float(prior_data[prior_data.Gene == name]['Log2FC (HD/C116)']) for name, id in prior_gene_dict.items()}
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
