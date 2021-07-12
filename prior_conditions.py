@@ -7,6 +7,8 @@ def get_condition_function(function_name:str):
         return huntington_DIA
     elif function_name == 'huntington_DDA':
         return huntington_DDA
+    elif function_name == 'huntington_DDA_significant':
+        return huntington_DDA_significant
 
 
 def kent_vic_10h(data_frame):
@@ -33,13 +35,12 @@ def huntington_DIA(data_frame):
     gene_with_aliases = all_data.Gene.str.contains(';')
     aliases = list(all_data[gene_with_aliases].Gene)
     first_aliases = [x.split(';')[0] for x in aliases]
-    second_alises = [x.split(';')[1][1:] for x in aliases]
     all_data = all_data.replace(aliases, first_aliases)
     all_data = all_data.drop_duplicates(subset=['Gene'])
-
-    data = all_data[(all_data.Qvalue <= 0.05) & (all_data['Absolute AVG Log2 Ratio'] >= 0.58)]
-    prior_genes = list(data.Gene)
-    return prior_genes, data, all_data
+    prior_genes = list(all_data.Gene)
+    # data = all_data[(all_data.Qvalue <= 0.05) & (all_data['Absolute AVG Log2 Ratio'] >= 0.58)]
+    # prior_genes = list(data.Gene)
+    return prior_genes, all_data, all_data
 
 
 def huntington_DDA(data_frame):
@@ -53,6 +54,21 @@ def huntington_DDA(data_frame):
     all_data = all_data.replace(aliases, first_aliases)
     all_data = all_data.drop_duplicates(subset=['Gene'])
 
+    # data = all_data[(all_data['P_Value (HD/C116)'] <= 0.05) & (all_data['Absolute Log2FC (HD/C116)'] >= 0.58)]
+    prior_genes = list(all_data.Gene)
+    return prior_genes, all_data, all_data
+
+def huntington_DDA_significant(data_frame):
+    all_data = data_frame[~data_frame['Log2FC (HD/C116)'].isnull()]
+    all_data = all_data[~all_data.Gene.isnull()]
+
+    # keep only first name of genes with aliases
+    gene_with_aliases = all_data.Gene.str.contains(';')
+    aliases = list(all_data[gene_with_aliases].Gene)
+    first_aliases = [x.split(';')[0] for x in aliases]
+    all_data = all_data.replace(aliases, first_aliases)
+    all_data = all_data.drop_duplicates(subset=['Gene'])
+
     data = all_data[(all_data['P_Value (HD/C116)'] <= 0.05) & (all_data['Absolute Log2FC (HD/C116)'] >= 0.58)]
     prior_genes = list(data.Gene)
-    return prior_genes, data, all_data
+    return prior_genes, all_data, all_data
