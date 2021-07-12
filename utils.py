@@ -12,7 +12,7 @@ mg = mygene.MyGeneInfo()
 
 
 # Convert list of prior symbols to ids
-def convert_symbols_to_ids(prior_symbols, genes_names_file_path=None):
+def convert_symbols_to_ids(prior_symbols=None, genes_names_file_path=None):
     if genes_names_file_path:
         assert path.isfile(genes_names_file_path), 'Could not find {}'.format(genes_names_file_path)
         genes_names_to_ids = load_genes_ids_from_file(prior_symbols, genes_names_file_path)
@@ -23,7 +23,10 @@ def convert_symbols_to_ids(prior_symbols, genes_names_file_path=None):
 def load_genes_ids_from_file(genes_names, names_file):
     with open(names_file, 'r') as f:
         all_genes_names_to_ids = json.loads(f.read())
-    genes_names_to_ids = {name: int(all_genes_names_to_ids[name]) for name in genes_names if name in all_genes_names_to_ids}
+    if genes_names is not None:
+        genes_names_to_ids = {name: int(all_genes_names_to_ids[name]) for name in genes_names if name in all_genes_names_to_ids}
+    else:
+        genes_names_to_ids = {name: int(all_genes_names_to_ids[name]) for name in all_genes_names_to_ids}
     return genes_names_to_ids
 
 
