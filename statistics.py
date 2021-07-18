@@ -55,6 +55,19 @@ def two_sample_z_test(sample_1, sample_2, mu_diff=0) -> StatRes:
     pval = 2*(1 - norm.cdf(abs(z)))
     return StatRes(p_value=pval, directionality=directionality , z_score=z, name=two_sample_z_test.name)
 
+def proportion_test(gene_set, pathway_genes, relevant_pathways):
+    import gseapy as gs
+    results = gs.enrichr(gene_set, pathway_genes, organism='Human')
+    results_df = results.results
+    results_dict = {}
+    terms = list(results_df.Term)
+    for path in relevant_pathways:
+        if path in terms:
+            results_dict[path] = float(results_df[results_df.Term == path]['P-value'])
+        else:
+            results_dict[path] = 1
+
+    return results_dict
 
 def bh_correction(p_values):
     p_vals_rank = scipy.stats.rankdata(p_values, 'max') - 1

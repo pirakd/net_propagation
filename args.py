@@ -20,8 +20,8 @@ class Args:
         self.network_file = 'HD.net'
         self.experiment_file = 'HD_scores.xlsx'
         self.condition_function_name = 'huntington'
-        self.propagation_input_type = 'Absolute AVG Log2 Ratio' # 'abs_log2FC', ones, logfc
-        self.sheet_name = 'Suppl. Table 4B' #'Protein_Abundance'
+        self.propagation_input_type = 'Absolute AVG Log2 Ratio'
+        self.sheet_name = 'Suppl. Table 4A'
 
 
         self.pathway_file = 'canonical_pathways.txt'
@@ -59,7 +59,7 @@ class Args:
         self.interesting_pathway_file_dir = path.join(self.data_dir, self.interesting_pathway_file)
         self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
         self.genes_names_file_path = path.join(self.data_dir, self.genes_names_file)
-        self.propgation_scores_path = path.join(self.root_folder, self.propagation_folder)
+        self.propagation_scores_path = path.join(self.root_folder, self.propagation_folder)
 
 
     def set_condition_function(self):

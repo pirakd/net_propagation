@@ -1,5 +1,5 @@
 """"
-This script is used to generate and save a relatively small number of propagation scores
+This script is used to generate and save propagation score for a variation of parameters
 """
 import utils as utils
 from utils import read_prior_set, get_propagation_input, save_propagation_score, get_time
@@ -9,11 +9,13 @@ from args import Args
 import pickle as pl
 
 
-prior_set_conditions = ['huntington'] * 3
+prior_set_conditions = ['huntington_DIA', 'huntington_DDA'] * 2
 propagation_results_dir = path.join('output', 'propagation_results')
 args = Args(None, is_create_output_folder=False)
-sheet_names = ['Suppl. Table 4B'] * 3
-alpha = [0.8, 0.9, 1]
+sheet_names = ['Suppl. Table 4A'] * 4
+alpha = [0.9, 0.9, 1, 1]
+propagation_input_type_list = ['Absolute AVG Log2 Ratio', 'Absolute Log2FC (HD/C116)'] * 2
+
 
 network_graph = utils.read_network(args.network_file)
 fc_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())
@@ -25,9 +27,11 @@ for c, condition in enumerate(prior_set_conditions):
     args.alpha = alpha[c]
     args.condition_function_name = prior_set_conditions[c]
     args.set_condition_function()
+    args.propagation_input_type = propagation_input_type_list[c]
 
     # loading prior set
-    prior_set, prior_data = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
+    prior_set, prior_data, _ = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
+    a=1
     prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
     prior_set_ids = list(prior_gene_dict.values())
     propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
