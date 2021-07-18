@@ -21,12 +21,12 @@ class Args:
         self.experiment_file = 'HD_scores.xlsx'
         self.condition_function_name = 'huntington'
         self.propagation_input_type = 'Absolute AVG Log2 Ratio' # 'abs_log2FC', ones, logfc
-        self.sheet_name = 'Protein_Abundance''Suppl. Table 4B'
+        self.sheet_name = 'Suppl. Table 4B' #'Protein_Abundance'
 
 
         self.pathway_file = 'canonical_pathways.txt'
         self.interesting_pathway_file = 'interesting_pathways.txt'
-        self.random_network_file = 'random_networks/htt'
+        self.random_network_file = 'random_networks'
         self.genes_names_file = 'genes_names_to_ids'
         self.n_networks = 1000
         self.propagation_folder = 'propagation_scores'

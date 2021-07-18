@@ -78,7 +78,7 @@ def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagat
         for n in range(n_networks):
             H = network.copy()
             nx.swap.double_edge_swap(H, nswap=Q * E, max_tries=Q * E * 2)
-            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, prior_set, args=args)
+            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, genes=genes, prior_set=prior_set, args=args)
             gene_scores.append(current_gene_scores)
 
     return gene_indexes, np.array(gene_scores)

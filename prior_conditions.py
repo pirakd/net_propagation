@@ -52,8 +52,8 @@ def kent_vic_24h(data_frame):
 
 
 def huntington(data_frame):
-    data = data_frame[data_frame['Notes DIA MS'] == 'Significant']
-    #data = data_frame[(data_frame.Qvalue <= 0.05) & (data_frame['Absolute AVG Log2 Ratio'] >= 0.58)]
+    #data = data_frame[data_frame['Notes DIA MS'] == 'Significant']
+    data = data_frame[(data_frame.Qvalue <= 0.05) & (data_frame['Absolute AVG Log2 Ratio'] >= 0.58)]
     data = data.drop_duplicates(subset=['Gene'])
     genes = list(data.Gene)
     return genes, data
