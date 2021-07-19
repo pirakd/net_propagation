@@ -9,7 +9,10 @@ def get_condition_function(function_name:str):
         return huntington_DDA
     elif function_name == 'huntington_DDA_significant':
         return huntington_DDA_significant
-
+    elif function_name == 'colorectal_cancer':
+        return colorectal_cancer
+    else:
+        assert 0, 'function_name is not a valid condition'
 
 def kent_vic_10h(data_frame):
     expressed_in = 'Kent_10h-VIC_10h'
@@ -71,4 +74,21 @@ def huntington_DDA_significant(data_frame):
 
     data = all_data[(all_data['P_Value (HD/C116)'] <= 0.05) & (all_data['Absolute Log2FC (HD/C116)'] >= 0.58)]
     prior_genes = list(data.Gene)
+    return prior_genes, data, all_data
+
+
+def colorectal_cancer(data_frame):
+    all_data = data_frame[~data_frame['log2FC'].isnull()]
+    all_data = all_data[~all_data.Gene_Name.isnull()]
+
+    # keep only first name of genes with aliases
+    gene_with_aliases = all_data.Gene_Name.str.contains(';')
+    if gene_with_aliases.any():
+        aliases = list(all_data[gene_with_aliases].Gene_Name)
+        first_aliases = [x.split(';')[0] for x in aliases]
+        all_data = all_data.replace(aliases, first_aliases)
+    all_data = all_data.drop_duplicates(subset=['Gene_Name'])
+
+    # data = all_data[(all_data['P_Value (HD/C116)'] <= 0.05) & (all_data['Absolute Log2FC (HD/C116)'] >= 0.58)]
+    prior_genes = list(all_data.Gene_Name)
     return prior_genes, all_data, all_data
