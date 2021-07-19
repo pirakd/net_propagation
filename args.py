@@ -61,6 +61,7 @@ class Args:
             self.output_folder = None
 
         self.condition_function = get_condition_function(self.condition_function_name)
+        # get conditions on experiment
         self.network_file = path.join(self.data_dir, self.network_file)
         self.experiment_file_path = path.join(self.data_dir, self.experiment_file)
         self.pathway_file_dir = path.join(self.data_dir, self.pathway_file)
