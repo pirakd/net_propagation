@@ -9,7 +9,7 @@ from args import Args
 import pickle as pl
 test_name = 'propagation_main'
 args = Args(test_name)
-n_processes = 40
+n_processes = 1
 
 #Read the network
 network_graph = utils.read_network(args.network_file)
@@ -22,6 +22,9 @@ prior_gene_dict = utils.convert_symbols_to_ids(prior_set)
 prior_set_ids = list(prior_gene_dict.values())
 propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
 
+# since edges of random graphs are one we set all original edges to one
+for u, v, d in network_graph.edges(data=True):
+    d[2] = 1
 
 #Use the graph, either run the propagation or load previously acquired propagation results
 _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input, args=args, prior_set=prior_set_ids)
