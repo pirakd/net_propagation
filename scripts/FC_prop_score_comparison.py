@@ -6,7 +6,7 @@ from visualization_tools import plot_enrichment_table
 import numpy as np
 from args import Args
 import pickle as pl
-from statistics import bh_correction, get_stat_test_func
+from statistic_methods import bh_correction, get_stat_test_func
 
 test_name = path.basename(__file__).split('.')[0]
 n_tests = 1
@@ -23,7 +23,7 @@ log_of_prop_scores = True
 # reference_score_type_list = ['AVG Log2 Ratio','Log2FC (HD/C116)']
 
 # Corona
-prior_set_conditions = ['kent_vic_24h', 'kent_vic_10h']
+prior_set_conditions = ['kent_vic_24h']
 # prior_set_conditions = ['kent_vic_24h']
 sheet_names_list = ['Protein_Abundance', 'Protein_Abundance', 'RNA', 'RNA']
 statistic_test_list = ['man_whit_U_test', 'two_sample_z_test'] *2
@@ -31,7 +31,7 @@ reference_score_type_list = ['abs_log2FC'] * 4
 
 args = Args(test_name)
 load_prop_results = True
-keep_only_excel_genes = True
+keep_only_excel_genes = False
 
 
 for i in range(n_tests):
@@ -61,9 +61,9 @@ for i in range(n_tests):
         reference_scores = get_propagation_input(all_genes_dict, all_data, reference_score_type)
 
         if load_prop_results:
-            propagation_file_name = '{}_{}_{}'.format(args.sheet_name, condition, str(args.alpha))
+            propagation_file_name = 'rand{}_{}_{}'.format(args.sheet_name, condition, str(args.alpha))
             propagation_results_path = path.join(args.propagation_scores_path, propagation_file_name)
-            propagation_res_dict = load_file(propagation_results_path, decompress=False)
+            propagation_res_dict = load_file(propagation_results_path, decompress=True)
 
             gene_scores = np.array(propagation_res_dict['gene_prop_scores'])
 
@@ -78,9 +78,9 @@ for i in range(n_tests):
             genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
         if normalize_by_eig_vec_cent:
-            propagation_norm_file_name = '{}_{}_1'.format(args.sheet_name, condition)
+            propagation_norm_file_name = 'rand{}_{}_1'.format(args.sheet_name, condition)
             propagation_norm_res_path = path.join(args.propagation_scores_path, propagation_norm_file_name)
-            norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=False)
+            norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
 
             norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
             norm_scores = np.array(norm_propagation_res_dict['gene_prop_scores'])
@@ -106,29 +106,29 @@ for i in range(n_tests):
         interesting_pathways = load_interesting_pathways(args.interesting_pathway_file_dir)
         interesting_pathways = np.sort(interesting_pathways)
         genes_of_interesting_pathways = load_pathways_genes(args.pathway_file_dir, interesting_pathways)
-        genes_by_pathway_filtered = {pathway: [id for id in genes_of_interesting_pathways[pathway] if id in genes_id_to_idx] for pathway
-                                   in interesting_pathways}
-        excel_genes_by_pathway_filtered = {pathway: [id for id in genes_of_interesting_pathways[pathway] if id in reference_scores] for pathway
-                                           in interesting_pathways}
-        pathways_with_many_genes = [pathway_name for pathway_name in genes_by_pathway_filtered.keys() if
-                                    (len(genes_by_pathway_filtered[pathway_name]) >= 5 and len(excel_genes_by_pathway_filtered[pathway_name]) >= 5)]
+        prop_filtered_genes_by_pathway = {pathway: [id for id in genes_of_interesting_pathways[pathway] if id in genes_id_to_idx] for pathway
+                                          in interesting_pathways}
+        reference_filtered_genes_by_pathway = {pathway: [id for id in genes_of_interesting_pathways[pathway] if id in reference_scores] for pathway
+                                               in interesting_pathways}
+        pathways_with_many_genes = [pathway_name for pathway_name in prop_filtered_genes_by_pathway.keys() if
+                                    (len(prop_filtered_genes_by_pathway[pathway_name]) >= 5 and len(reference_filtered_genes_by_pathway[pathway_name]) >= 5)]
         # check scores of genes related to interesting pathway
-        genes_scores_by_pathway = {pathway:[gene_scores[genes_id_to_idx[id]] for id in genes_by_pathway_filtered[pathway]] for pathway
-                                   in pathways_with_many_genes}
-        reference_scores_by_pathway = {pathway: [reference_scores[id] for id in excel_genes_by_pathway_filtered[pathway]] for pathway
-                                       in pathways_with_many_genes}
+        prop_filtered_genes_scores_by_filtered_pathways = {pathway:[gene_scores[genes_id_to_idx[id]] for id in prop_filtered_genes_by_pathway[pathway]] for pathway
+                                                           in pathways_with_many_genes}
+        reference_filtered_genes_scores_by_filtered_pathways = {pathway: [reference_scores[id] for id in reference_filtered_genes_by_pathway[pathway]] for pathway
+                                                                in pathways_with_many_genes}
 
         fc_p_vals, fc_dir, fc_z_score, prop_p_vals, prop_dir, prop_z_score = [], [], [], [], [], []
         for pathway in pathways_with_many_genes:
-            random_genes = [id for id in reference_scores.keys() if id not in excel_genes_by_pathway_filtered[pathway]]
-            fc_res = statistic_test(reference_scores_by_pathway[pathway], [reference_scores[id] for id in random_genes])
+            random_genes = [id for id in reference_scores.keys() if id not in reference_filtered_genes_scores_by_filtered_pathways[pathway]]
+            fc_res = statistic_test(reference_filtered_genes_scores_by_filtered_pathways[pathway], [reference_scores[id] for id in random_genes])
             fc_p_vals.append(fc_res.p_value)
             fc_z_score.append(fc_res.z_score)
             fc_dir.append(fc_res.directionality)
 
-            random_genes = [id for id in genes_id_to_idx.keys() if id not in genes_by_pathway_filtered[pathway]]
-            prop_res = statistic_test(genes_scores_by_pathway[pathway], [gene_scores[genes_id_to_idx[id]]
-                                                                     for id in random_genes])
+            random_genes = [id for id in genes_id_to_idx.keys() if id not in prop_filtered_genes_scores_by_filtered_pathways[pathway]]
+            prop_res = statistic_test(prop_filtered_genes_scores_by_filtered_pathways[pathway], [gene_scores[genes_id_to_idx[id]]
+                                                                                                 for id in random_genes])
             prop_p_vals.append(prop_res.p_value)
             prop_z_score.append(prop_res.z_score)
             prop_dir.append(prop_res.directionality)

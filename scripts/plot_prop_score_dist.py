@@ -6,14 +6,14 @@ from os import path
 import numpy as np
 from args import Args
 import pickle as pl
-from statistics import empirical_mean_diff, man_whit_U_test
+from statistic_methods import empirical_mean_diff, man_whit_U_test
 test_name = path.basename(__file__).split('.')[0]
 
 n_distributions = 5
 n_tests = 2
 normalize_by_eig_vec_cent_list = [False, True]
 normalize_by_degree_list = [False, False]
-from statistics import get_stat_test_func
+from statistic_methods import get_stat_test_func
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 

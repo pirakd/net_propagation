@@ -7,12 +7,13 @@ from os import path, makedirs
 from propagation_routines import propagate_network
 from args import Args
 import pickle as pl
+import numpy as np
 
 
 prior_set_conditions = ['huntington_DIA', 'huntington_DDA'] * 2
 propagation_results_dir = path.join('output', 'propagation_results')
 args = Args(None, is_create_output_folder=False)
-sheet_names = ['Suppl. Table 4A'] * 4
+sheet_names = ['Protein_Abundance'] * 4
 alpha = [0.9, 0.9, 1, 1]
 propagation_input_type_list = ['Absolute AVG Log2 Ratio', 'Absolute Log2FC (HD/C116)'] * 2
 
@@ -31,17 +32,17 @@ for c, condition in enumerate(prior_set_conditions):
 
     # loading prior set
     prior_set, prior_data, _ = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
-    a=1
     prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
     prior_set_ids = list(prior_gene_dict.values())
     propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
-
+    propagation_input[propagation_input!=0] = np.abs(np.random.randn(np.sum(propagation_input!=0)))
     # Propagate network
     _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input, args,
                                                            prior_set=list(prior_gene_dict.values()))
     genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
     prop_score_file_name = args.sheet_name + '_' + condition + '_' + str(args.alpha)
+    prop_score_file_name = 'rand' + args.sheet_name + '_' + condition + '_' + str(args.alpha)
 
     # save propagation score
     save_propagation_score(file_name=prop_score_file_name, propagation_scores=gene_scores, prior_set=prior_set,
