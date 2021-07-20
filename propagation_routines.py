@@ -84,14 +84,14 @@ def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagat
     return gene_indexes, np.array(gene_scores)
 
 
-def parallel_propagate(network_dir=None, genes=None,  prior_set=None):
+def parallel_propagate(network_dir=None, propagation_input=None, args=None, genes=None,  prior_set=None):
     H = load_file(network_dir)
-    matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, genes, prior_set)
+    matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, args, genes, prior_set)
     return current_gene_scores
 
 
-def propagate_networks_parallel(network, genes=None, prior_set=None,
-                                random_networks_dir=None, n_networks=100, n_processes=1):
+def propagate_networks_parallel(network, args, genes=None, prior_set=None,
+                                propagation_input=None, random_networks_dir=None, n_networks=100, n_processes=1):
     import multiprocessing as mp
     from functools import partial
     mp.set_start_method('fork')
@@ -103,8 +103,10 @@ def propagate_networks_parallel(network, genes=None, prior_set=None,
     n_networks_to_process = np.min([len(random_networks_files), n_networks])
     network_dirs = (os.path.join(random_networks_dir, random_networks_files[i]) for i in range(n_networks_to_process))
 
-    with mp.Pool(processes=4) as pool:
+    with mp.Pool(processes=n_processes) as pool:
         gene_scores = \
-            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, genes=genes, prior_set=prior_set),
+            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, args=args, propagation_input=propagation_input, genes=genes, prior_set=prior_set),
                                                       network_dirs), total=n_networks_to_process, desc='propagating networks')]
+
+
     return np.array(gene_scores)

@@ -4,11 +4,12 @@ sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
 import utils as utils
 from utils import read_prior_set, get_propagation_input, save_propagation_score, get_time
 from statistic_methods import get_sample_p_values, bh_correction
-from propagation_routines import propagate_network, propagate_networks
+from propagation_routines import propagate_network, propagate_networks, propagate_networks_parallel
 from args import Args
 import pickle as pl
 test_name = 'propagation_main'
 args = Args(test_name)
+n_processes = 40
 
 #Read the network
 network_graph = utils.read_network(args.network_file)
@@ -28,9 +29,12 @@ _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagatio
 genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
 # Propagate using randomized networks
-_, random_networks_scores = propagate_networks(network_graph, args, list(genes_id_to_idx.keys()), prior_set_ids,
-                                               propagation_input, args.random_networks_dir, n_networks=args.n_networks)
-
+if n_processes == 1:
+    _, random_networks_scores = propagate_networks(network_graph, args, list(genes_id_to_idx.keys()), prior_set_ids,
+                                                   propagation_input, args.random_networks_dir, n_networks=args.n_networks)
+else:
+    random_networks_scores = propagate_networks_parallel(network_graph, args, list(genes_id_to_idx.keys()), prior_set_ids,
+                                                   propagation_input, args.random_networks_dir, n_networks=args.n_networks, n_processes=n_processes)
 
 prop_score_file_name = args.sheet_name + '_' + args.condition_function_name + '_' + str(args.alpha)
 # save propagation score
