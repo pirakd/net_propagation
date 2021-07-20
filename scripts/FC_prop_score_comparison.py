@@ -9,7 +9,7 @@ import pickle as pl
 from statistics import bh_correction, get_stat_test_func
 
 test_name = path.basename(__file__).split('.')[0]
-n_tests = 4
+n_tests = 1
 normalize_by_eig_vec_cent_list = [True] * 4
 normalize_by_degree_list = [False] * 2
 res_type_list = ['-log10(p)', 'z_score'] * 2
@@ -24,13 +24,14 @@ log_of_prop_scores = True
 
 # Corona
 prior_set_conditions = ['kent_vic_24h', 'kent_vic_10h']
+# prior_set_conditions = ['kent_vic_24h']
 sheet_names_list = ['Protein_Abundance', 'Protein_Abundance', 'RNA', 'RNA']
 statistic_test_list = ['man_whit_U_test', 'two_sample_z_test'] *2
 reference_score_type_list = ['abs_log2FC'] * 4
 
 args = Args(test_name)
 load_prop_results = True
-keep_only_excel_genes = False
+keep_only_excel_genes = True
 
 
 for i in range(n_tests):
@@ -39,7 +40,7 @@ for i in range(n_tests):
     statistic_test = get_stat_test_func(statistic_test_list[i])
     normalize_by_eig_vec_cent = normalize_by_eig_vec_cent_list[i]
     title = '{} - Enrichment of Pathway Genes'.format(args.sheet_name)
-    fig_name = 'enrichement_{}'.format(i)
+    fig_name = 'enrichment_{}'.format(i)
 
     fc_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list(), z_score=[])
     prop_scores_dict  = dict(p_vals=list(), adj_p_vals=list(), direction=list(), z_score=[])
@@ -65,6 +66,7 @@ for i in range(n_tests):
             propagation_res_dict = load_file(propagation_results_path, decompress=False)
 
             gene_scores = np.array(propagation_res_dict['gene_prop_scores'])
+
             genes_idx_to_id = propagation_res_dict['gene_idx_to_id']
             genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
         else:
@@ -152,23 +154,23 @@ for i in range(n_tests):
     directions_mat = np.zeros((len(all_pathways_names), len(prior_set_conditions)*2))
 
     rows_names = []
-    for i in range(len(prior_set_conditions)*2):
-        index = int(i//2)
-        if np.mod(i, 2):
-            p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['p_vals'][index]
-            adj_p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['adj_p_vals'][index]
+    for j in range(len(prior_set_conditions)*2):
+        index = int(j//2)
+        if np.mod(j, 2):
+            p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = prop_scores_dict['p_vals'][index]
+            adj_p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = prop_scores_dict['adj_p_vals'][index]
             if prop_scores_dict['direction'][index] is not None:
-                directions_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['direction'][index]
+                directions_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = prop_scores_dict['direction'][index]
             if prop_scores_dict['z_score'][index] is not None:
-                z_score_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = prop_scores_dict['z_score'][index]
+                z_score_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = prop_scores_dict['z_score'][index]
             rows_names.append(prior_set_conditions[index] + '_prop')
         else:
-            p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['p_vals'][index]
-            adj_p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['adj_p_vals'][index]
+            p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = fc_scores_dict['p_vals'][index]
+            adj_p_vals_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = fc_scores_dict['adj_p_vals'][index]
             if prop_scores_dict['direction'][index] is not None:
-                directions_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['direction'][index]
+                directions_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = fc_scores_dict['direction'][index]
             if fc_scores_dict['z_score'][index] is not None:
-                z_score_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], i] = fc_scores_dict['z_score'][index]
+                z_score_mat[[pathway_to_idx[x] for x in pathways_per_condition[index]], j] = fc_scores_dict['z_score'][index]
             rows_names.append(prior_set_conditions[index] + '_logfc')
 
     if prop_scores_dict['direction'][index][0] is None:
