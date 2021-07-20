@@ -2,11 +2,11 @@ import sys
 from os import path
 sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
 import utils as utils
-from utils import read_prior_set, get_propagation_input
-from statistic_methods import get_sample_p_values
+from utils import read_prior_set, get_propagation_input, save_propagation_score, get_time
+from statistic_methods import get_sample_p_values, bh_correction
 from propagation_routines import propagate_network, propagate_networks
 from args import Args
-
+import pickle as pl
 test_name = 'propagation_main'
 args = Args(test_name)
 
@@ -32,27 +32,19 @@ _, random_networks_scores = propagate_networks(network_graph, args, list(genes_i
                                                propagation_input, args.random_networks_dir, n_networks=args.n_networks)
 
 
+prop_score_file_name = args.sheet_name + '_' + args.condition_function_name + '_' + str(args.alpha)
+# save propagation score
+save_propagation_score(file_name=prop_score_file_name, propagation_scores=gene_scores, prior_set=prior_set,
+                       propagation_input=propagation_input, genes_idx_to_id=genes_idx_to_id, args=args,
+                       date=get_time(), save_dir=args.output_folder)
 
 # Rank the genes in the original network compared to the random networks
 p_values = get_sample_p_values(gene_scores, random_networks_scores)
+adj_p_val = bh_correction(p_values)
 
-title = ['gene_id\tp_value\n']
-lines = ['{}\t{}\n'.format(genes_idx_to_id[i], p_values[i]) for i in range(len(p_values))]
+title = ['gene_id\tp_value\tadj_p\n']
+lines = ['{}\t{}\t{}\n'.format(genes_idx_to_id[i], p_values[i], adj_p_val[i]) for i in range(len(p_values))]
 lines = title + lines
 
 with open(path.join(args.output_folder, 'p_values.txt'), 'w') as f:
-    f.writelines(lines)
-
-with open(path.join(args.output_folder, 'significant_p_values.txt'), 'w') as f:
-    significant_p_values = dict()
-    significant_ids = dict()
-    for i in range(len(p_values)):
-        if (p_values[i] <= 0.05):
-            significant_p_values[i] = p_values[i]
-            significant_ids[i] = genes_idx_to_id[i]
-    significant = ['{}\t{}\n'.format(significant_ids[k], significant_p_values[k]) for k,v in significant_p_values.items()]
-    f.writelines(significant)
-
-lines = ['{}\n'.format(p) for p in prior_set_ids]
-with open(path.join(args.output_folder, 'prior_set.txt'), 'w') as f:
     f.writelines(lines)

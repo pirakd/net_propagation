@@ -153,17 +153,22 @@ def get_time():
     return datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
 
 
-def save_propagation_score(file_name, propagation_scores, prior_set, propagation_input, genes_idx_to_id, args, date=None):
+def save_propagation_score(file_name, propagation_scores, prior_set, propagation_input, genes_idx_to_id, args,
+                           date=None, random_networks_prop_score=None, save_dir = None):
     if date is None:
         date = args.date
 
-    # save propagation score
-    os.makedirs(args.propagation_scores_path, exist_ok=True)
-    propagation_results_path = path.join(args.propagation_scores_path, file_name)
+    if save_dir is None:
+        os.makedirs(args.propagation_scores_path, exist_ok=True)
+        propagation_results_path = path.join(args.propagation_scores_path, file_name)
+    else:
+        propagation_results_path = path.join(save_dir, file_name)
 
     args_dict = {'alpha': args.alpha, 'n_max_iterations': args.n_max_iterations, 'convergence_th': args.convergence_th,
                  'date': date}
     save_dict = {'propagation_args': args_dict, 'prior_set': prior_set, 'propagation_input': propagation_input,
                  'gene_idx_to_id': genes_idx_to_id, 'gene_prop_scores': propagation_scores}
+    if random_networks_prop_score:
+        save_dict['random_prop_scores'] = random_networks_prop_score
     save_file(save_dict, propagation_results_path)
 
