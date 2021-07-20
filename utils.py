@@ -73,9 +73,15 @@ def load_file(load_dir, decompress=True):
     with open(load_dir, 'rb') as f:
         file = pickle.load(f)
     if decompress:
-        file = zlib.decompress(file)
-        file = pickle.loads(file)
-    return file
+        try:
+                file = zlib.decompress(file)
+                file = pickle.loads(file)
+                return file
+        except:
+            print('entered an uncompressed file but asked decompress it')
+            return file
+    else:
+        return file
 
 
 def read_prior_set(condition_fucntion, excel_dir, sheet_name,):
