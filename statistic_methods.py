@@ -11,7 +11,6 @@ class StatRes:
         self.z_score = z_score
         self.name = name
 
-
 def get_stat_test_func(name):
     if name == 'empirical_mean_diff':
         return empirical_mean_diff
@@ -19,7 +18,8 @@ def get_stat_test_func(name):
         return two_sample_z_test
     elif name == 'man_whit_U_test':
         return man_whit_U_test
-
+    elif name == 'wilcoxon_rank_sums_test':
+        return wilcoxon_rank_sums_test
 
 def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000) -> StatRes:
     empirical_mean_diff.name = 'Empirical mean diff'
@@ -37,11 +37,17 @@ def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000) -> Sta
 
 
 def man_whit_U_test(experiment_scores, elements_scores) -> StatRes:
-    man_whit_U_test.name = 'Mann–Whitney U test'
+    man_whit_U_test.name = 'Mann–Whitney_U_test'
     p_vals = scipy.stats.mannwhitneyu(experiment_scores, elements_scores).pvalue
     direction = np.mean(experiment_scores) > np.mean(elements_scores)
     return StatRes(p_value=p_vals, directionality=direction, name=man_whit_U_test.name)
 
+def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='greater') -> StatRes:
+    wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
+    from scipy.stats import ranksums
+    p_vals = scipy.stats.ranksums(experiment_scores, elements_scores, alternative= alternative).pvalue
+    direction = np.mean(experiment_scores) > np.mean(elements_scores)
+    return StatRes(p_value=p_vals, directionality=direction, name=wilcoxon_rank_sums_test.name)
 
 def two_sample_z_test(sample_1, sample_2, mu_diff=0) -> StatRes:
 
