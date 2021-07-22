@@ -24,7 +24,7 @@ def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, args:Ar
 
         if sp.linalg.norm(F_t_1 - F_t) < args.convergence_th:
             break
-    F_t[[gene_indexes[seed] for seed in seeds if seed in gene_indexes]] = 0
+    # F_t[[gene_indexes[seed] for seed in seeds if seed in gene_indexes]] = 0
     return F_t
 
 
@@ -48,7 +48,9 @@ def propagate_network(network, propagation_input, args:Args, genes=None, prior_s
     if prior_set:
         gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
         gene_scores = np.sum(np.array(gene_scores), axis=0)
-        gene_scores[[gene_indexes[x] for x in effective_prior_set]] *= len(effective_prior_set) / (len(effective_prior_set)-1)
+
+        # remove self propagation
+        # gene_scores[[gene_indexes[x] for x in effective_prior_set]] *= len(effective_prior_set) / (len(effective_prior_set)-1)
     else:
         gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
                                num_genes=num_genes, args=args)
