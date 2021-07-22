@@ -132,18 +132,10 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
         inputs = {x: 1 for x in prior_gene_dict.values()}
     elif input_type is None:
         inputs = {x: 1 for x in prior_gene_dict.values()}
-    elif input_type == 'abs_log2FC':
-        inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['log2FC'])) for name, id in prior_gene_dict.items()}
-    elif input_type == 'log2FC':
-        inputs = {id: float(prior_data[prior_data.Gene_Name == name]['log2FC']) for name, id in prior_gene_dict.items()}
-    elif input_type == 'Absolute AVG Log2 Ratio':
-        inputs = {id: float(prior_data[prior_data.Gene == name]['Absolute AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
-    elif input_type == 'AVG Log2 Ratio':
-        inputs = {id: float(prior_data[prior_data.Gene == name]['AVG Log2 Ratio']) for name, id in prior_gene_dict.items()}
-    elif input_type == 'Absolute Log2FC (HD/C116)':
-        inputs = {id: float(prior_data[prior_data.Gene == name]['Absolute Log2FC (HD/C116)']) for name, id in prior_gene_dict.items()}
-    elif input_type == 'Log2FC (HD/C116)':
-        inputs = {id: float(prior_data[prior_data.Gene == name]['Log2FC (HD/C116)']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'abs_Score':
+        inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'Score':
+        inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs

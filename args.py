@@ -10,41 +10,44 @@ class Args:
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'data'
 
-        # # corona virus
+        ## corona virus
         # self.network_file = 'H_sapiens.net'
         # self.experiment_file = 'Table_S1_V1.xlsx'
-        # self.propagation_input_type = 'abs_log2FC' #ones, logfc
-        # self.condition_function_name = 'kent_mock_no_vic_mock_24h'
+        # self.propagation_input_type = 'abs_Score'
+        # self.sheet_name = 'Protein_Abundance'
+        # self.condition_function_name = 'kent_vic_24h'
         # self.interesting_pathway_file = 'interesting_pathways.txt'
 
-        # # Huntington
-        # self.network_file = 'HD.net'
-        # self.experiment_file = 'HD_scores.xlsx'
-        # self.condition_function_name = 'huntington_DDA_significant'
-        # self.propagation_input_type = 'Absolute Log2FC (HD/C116)'
-        # self.sheet_name = 'Suppl. Table 4A'
-        # self.interesting_pathway_file = 'interesting_pathways_HD.txt'
+        ## Huntington
+        self.data_file = 'HD_data'
+        self.network_file = 'HD.net'
+        self.condition_function_name = 'huntington_DDA'
+        self.sheet_name = 'Suppl. Table 4A'
+        self.interesting_pathway_file = 'None'
 
-        # colorectal_data
-        self.data_file = 'colorectal_data'
-        self.network_file = 'H_sapiens.net'
-        self.experiment_file = 'fc_scores.xlsx'
-        self.condition_function_name = 'colorectal_cancer'
-        self.propagation_input_type = 'abs_log2FC'
-        self.sheet_name = 'EV_negative'
-        self.interesting_pathway_file = None
-
+        ## colorectal_data
+        # self.data_file = 'colorectal_data'
+        # self.network_file = 'H_sapiens.net'
+        # self.experiment_file = 'scores.xlsx'
+        # self.condition_function_name = 'colorectal_cancer'
+        # self.propagation_input_type = 'abs_Score'
+        # self.sheet_name = 'EV_positive'
+        # self.interesting_pathway_file = None
+        
+        self.experiment_file = 'scores.xlsx'
+        self.propagation_input_type = 'abs_Score'
         self.pathway_file = 'canonical_pathways.txt'
         self.random_network_file = 'random_networks'
         self.genes_names_file = 'genes_names_to_ids'
+        # self.genes_names_file = None
         self.n_networks = 1000
         self.propagation_folder = 'propagation_scores'
         self.date = None
 
         # propagation parameters
         self.alpha = 0.9
-        self.n_max_iterations = 500
-        self.convergence_th = 1e-8
+        self.n_max_iterations = 200
+        self.convergence_th = 1e-5
 
 
         # ~~~ derived parameters ~~~
@@ -69,9 +72,12 @@ class Args:
         if self.interesting_pathway_file:
             self.interesting_pathway_file_dir = path.join(self.data_dir, self.interesting_pathway_file)
         self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
-        self.genes_names_file_path = path.join(self.data_dir, self.genes_names_file)
-        self.propagation_scores_path = path.join(self.root_folder, self.propagation_folder)
+        if self.genes_names_file:
+            self.genes_names_file_path = path.join(self.data_dir, self.genes_names_file)
+        else:
+            self.genes_names_file_path = None
 
+        self.propagation_scores_path = path.join(self.root_folder, self.propagation_folder)
 
     def set_condition_function(self):
         self.condition_function = get_condition_function(self.condition_function_name)
