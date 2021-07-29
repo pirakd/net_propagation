@@ -133,7 +133,7 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
     elif input_type is None:
         inputs = {x: 1 for x in prior_gene_dict.values()}
     elif input_type == 'abs_Score':
-        inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
+        inputs = ({id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()})
     elif input_type == 'Score':
         inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
     else:
