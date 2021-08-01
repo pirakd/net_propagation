@@ -9,16 +9,15 @@ from args import Args
 import pickle as pl
 import numpy as np
 
-
-prior_set_conditions = ['huntington_DIA', 'huntington_DDA'] * 2
 propagation_results_dir = path.join('output', 'propagation_results')
 args = Args(None, is_create_output_folder=False)
-sheet_names = ['Protein_Abundance'] * 4
-alpha = [0.9, 0.9, 1, 1]
-propagation_input_type_list = ['Absolute AVG Log2 Ratio', 'Absolute Log2FC (HD/C116)'] * 2
-
+alpha = [0.8, 0.9, 0.95, 0.975, 1]
+sheet_names = ['Suppl. Table 4A'] * len(alpha)
+prior_set_conditions = ['huntington_DDA_significant'] * len(alpha)
+propagation_input_type_list = ['abs_Score'] * len(alpha)
 
 network_graph = utils.read_network(args.network_file)
+
 fc_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())
 prop_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())
 for c, condition in enumerate(prior_set_conditions):
@@ -33,16 +32,16 @@ for c, condition in enumerate(prior_set_conditions):
     # loading prior set
     prior_set, prior_data, _ = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
     prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
-    prior_set_ids = list(prior_gene_dict.values())
-    propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type)
-    propagation_input[propagation_input!=0] = np.abs(np.random.randn(np.sum(propagation_input!=0)))
+    all_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
+    prior_set_ids = set.intersection(set(prior_gene_dict.values()), set(network_graph.nodes))
+    propagation_input = get_propagation_input(prior_gene_dict, prior_data, args.propagation_input_type,
+                                              network=network_graph)
     # Propagate network
     _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input, args,
                                                            prior_set=list(prior_gene_dict.values()))
     genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
 
-    prop_score_file_name = args.sheet_name + '_' + condition + '_' + str(args.alpha)
-    prop_score_file_name = 'rand' + args.sheet_name + '_' + condition + '_' + str(args.alpha)
+    prop_score_file_name = '{}_{}_{}_{}'.format(args.propagation_input_type, args.sheet_name, condition, str(args.alpha))
 
     # save propagation score
     save_propagation_score(file_name=prop_score_file_name, propagation_scores=gene_scores, prior_set=prior_set,
