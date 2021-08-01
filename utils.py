@@ -127,7 +127,14 @@ def load_pathways_genes(pathways_dir, interesting_pathways=None):
     return filtered_pathways
 
 
-def get_propagation_input(prior_gene_dict, prior_data, input_type):
+def get_propagation_input(prior_gene_dict, prior_data, input_type, **kwargs):
+    """
+
+    :param prior_gene_dict: dictionary contains gene_name:gene_id pairs
+    :param prior_data: all excel file
+    :param input_type:
+    :return:
+    """
     if input_type == 'ones':
         inputs = {x: 1 for x in prior_gene_dict.values()}
     elif input_type is None:
@@ -136,6 +143,14 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type):
         inputs = ({id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()})
     elif input_type == 'Score':
         inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
+    elif input_type == 'abs_Score_all' :
+        assert 'network' in kwargs, 'Network must be provided to get_propagation_input method in order to propagate with input_type=\'abs_Score_all\''
+        network = kwargs['network']
+        inputs = ({id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()})
+        mean_input = np.mean([x for x in inputs.values()])
+        for id in network.nodes:
+            if id not in inputs:
+                inputs[id] = mean_input
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
     return inputs
