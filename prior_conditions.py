@@ -1,18 +1,9 @@
 def get_condition_function(function_name:str):
-    if function_name == 'kent_vic_10h':
-        return kent_vic_10h
-    elif function_name == 'kent_vic_24h':
-        return kent_vic_24h
-    elif function_name == 'huntington_DIA':
-        return huntington_DIA
-    elif function_name == 'huntington_DDA':
-        return huntington_DDA
-    elif function_name == 'huntington_DDA_significant':
-        return huntington_DDA_significant
-    elif function_name == 'colorectal_cancer':
-        return colorectal_cancer
-    else:
+    try:
+        return eval(function_name)
+    except:
         assert 0, '{} is not a valid condition'.format(function_name)
+
 
 
 def kent_mock_no_vic_mock_24h(data_frame):
