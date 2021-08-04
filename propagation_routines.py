@@ -45,8 +45,9 @@ def propagate_network(network, propagation_input, args:Args, genes=None, prior_s
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
     effective_prior_set = [x for x in prior_set if x in gene_indexes.keys()]
     if prior_set:
-        gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
-        gene_scores = np.sum(np.array(gene_scores), axis=0)
+        # gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
+        gene_scores = propagate([x for x in effective_prior_set], propagation_input, matrix, gene_indexes, num_genes, args)
+        # gene_scores = np.sum(np.array(gene_scores), axis=0)
     else:
         gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
                                num_genes=num_genes, args=args)
@@ -108,3 +109,22 @@ def propagate_networks_parallel(network, args, genes=None, prior_set=None,
 
 
     return np.array(gene_scores)
+
+
+def analytic_propagation(network, propagation_input, args: Args, genes=None, prior_set=None):
+    matrix, genes = generate_similarity_matrix(network, genes)
+    net_size = matrix.shape[0]
+    I = np.eye(net_size)
+    gene_score = args.alpha * np.linalg.inv((np.dot(I-(1-args.alpha), matrix)))
+
+    num_genes = len(genes)
+    gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
+    effective_prior_set = [x for x in prior_set if x in gene_indexes.keys()]
+    if prior_set:
+        gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
+        gene_scores = np.sum(np.array(gene_scores), axis=0)
+    else:
+        gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
+                               num_genes=num_genes, args=args)
+
+    return matrix, num_genes, gene_indexes, gene_scores
