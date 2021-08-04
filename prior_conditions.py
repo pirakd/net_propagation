@@ -105,6 +105,7 @@ def huntington_DDA_significant(data_frame):
 def colorectal_cancer(data_frame):
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
+    all_data = all_data[~(all_data['Score'] > 300)]
 
     # keep only first name of genes with aliases
     gene_with_aliases = all_data.Gene_Name.str.contains(';')
@@ -117,6 +118,24 @@ def colorectal_cancer(data_frame):
     # data = all_data[(all_data['P_Value (HD/C116)'] <= 0.05) & (all_data['Absolute Log2FC (HD/C116)'] >= 0.58)]
     prior_genes = list(all_data.Gene_Name)
     return prior_genes, all_data, all_data
+
+
+def colorectal_cancer_significant(data_frame):
+    all_data = data_frame[~data_frame['Score'].isnull()]
+    all_data = all_data[~all_data.Gene_Name.isnull()]
+
+    # keep only first name of genes with aliases
+    gene_with_aliases = all_data.Gene_Name.str.contains(';')
+    if gene_with_aliases.any():
+        aliases = list(all_data[gene_with_aliases].Gene_Name)
+        first_aliases = [x.split(';')[0] for x in aliases]
+        all_data = all_data.replace(aliases, first_aliases)
+    all_data = all_data.drop_duplicates(subset=['Gene_Name'])
+    data = all_data[(all_data['p_value'] <= 0.001) & ((all_data['Score'] >= 1.5) | (all_data['Score'] < -1.5)) ]
+    prior_genes = list(data.Gene_Name)
+    return prior_genes, data, all_data
+
+
 
 
 def huntington(data_frame):
