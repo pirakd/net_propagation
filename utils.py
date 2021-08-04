@@ -7,7 +7,6 @@ from os import path
 from datetime import datetime
 import mygene
 import json
-
 mg = mygene.MyGeneInfo()
 
 
@@ -129,7 +128,6 @@ def load_pathways_genes(pathways_dir, interesting_pathways=None):
 
 def get_propagation_input(prior_gene_dict, prior_data, input_type, **kwargs):
     """
-
     :param prior_gene_dict: dictionary contains gene_name:gene_id pairs
     :param prior_data: all excel file
     :param input_type:
@@ -143,10 +141,11 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type, **kwargs):
         inputs = ({id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()})
     elif input_type == 'Score':
         inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
-    elif input_type == 'abs_Score_all' :
+    elif input_type == 'abs_Score_all':
         assert 'network' in kwargs, 'Network must be provided to get_propagation_input method in order to propagate with input_type=\'abs_Score_all\''
         network = kwargs['network']
-        inputs = ({id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()})
+        inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score']))
+                  for name, id in prior_gene_dict.items() if id in network.nodes}
         mean_input = np.mean([x for x in inputs.values()])
         for id in network.nodes:
             if id not in inputs:
@@ -179,3 +178,38 @@ def save_propagation_score(file_name, propagation_scores, prior_set, propagation
         save_dict['random_prop_scores'] = random_networks_prop_score
     save_file(save_dict, propagation_results_path)
 
+
+def load_propagation_scores(args, normalize_score = True):
+    propagation_file_name = '{}_{}_{}_{}'.format(args.propagation_input_type, args.sheet_name, args.condition_function_name,
+                                                 str(args.alpha))
+    propagation_results_path = path.join(args.propagation_scores_path, propagation_file_name)
+    propagation_res_dict = load_file(propagation_results_path, decompress=True)
+    genes_scores = np.array(propagation_res_dict['gene_prop_scores'])
+    genes_idx_to_id = propagation_res_dict['gene_idx_to_id']
+    genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
+
+    if normalize_score:
+        genes_scores, genes_idx_to_id, genes_id_to_idx = normalize_propagation_inputs(genes_scores, genes_idx_to_id, args)
+
+    return genes_scores, genes_idx_to_id, genes_id_to_idx
+
+def normalize_propagation_inputs(gene_scores, genes_idx_to_id, args):
+    genes_id_to_idx = {xx:x for x, xx in genes_idx_to_id.items()}
+    propagation_norm_file_name = '{}_{}_{}_1'.format(args.propagation_input_type, args.sheet_name, args.condition_function_name)
+    propagation_norm_res_path = path.join(args.propagation_scores_path, propagation_norm_file_name)
+    norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
+
+    norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
+    norm_scores = np.array(norm_propagation_res_dict['gene_prop_scores'])
+    zero_normalization_genes = np.nonzero(norm_scores == 0)[0]
+    zero_prop_genes = np.nonzero(gene_scores == 0)[0]
+    genes_to_delete = list(set(zero_normalization_genes).difference(zero_prop_genes))
+    norm_scores[genes_to_delete] = 1
+    gene_scores[gene_scores != 0] = np.array(gene_scores[gene_scores != 0] / norm_scores[gene_scores != 0])
+
+    for gene_idx in genes_to_delete:
+        gene_id = genes_idx_to_id[gene_idx]
+        genes_idx_to_id.pop(gene_idx)
+        genes_id_to_idx.pop(gene_id)
+
+    return gene_scores, genes_idx_to_id, genes_id_to_idx
