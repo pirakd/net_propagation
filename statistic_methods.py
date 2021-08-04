@@ -21,7 +21,7 @@ def get_stat_test_func(name):
     elif name == 'wilcoxon_rank_sums_test':
         return wilcoxon_rank_sums_test
 
-def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000) -> StatRes:
+def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000, **kwargs) -> StatRes:
     empirical_mean_diff.name = 'Empirical mean diff'
 
     if not isinstance(elements_scores, np.ndarray):
@@ -36,20 +36,20 @@ def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000) -> Sta
     return StatRes(p_value=p_val[0], directionality=direction[0], name=empirical_mean_diff.name)
 
 
-def man_whit_U_test(experiment_scores, elements_scores) -> StatRes:
+def man_whit_U_test(experiment_scores, elements_scores, **kwargs) -> StatRes:
     man_whit_U_test.name = 'Mann–Whitney_U_test'
     p_vals = scipy.stats.mannwhitneyu(experiment_scores, elements_scores).pvalue
     direction = np.mean(experiment_scores) > np.mean(elements_scores)
     return StatRes(p_value=p_vals, directionality=direction, name=man_whit_U_test.name)
 
-def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='greater') -> StatRes:
+def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='greater', **kwargs) -> StatRes:
     wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
     from scipy.stats import ranksums
     p_vals = scipy.stats.ranksums(experiment_scores, elements_scores, alternative= alternative).pvalue
     direction = np.mean(experiment_scores) > np.mean(elements_scores)
     return StatRes(p_value=p_vals, directionality=direction, name=wilcoxon_rank_sums_test.name)
 
-def two_sample_z_test(sample_1, sample_2, mu_diff=0) -> StatRes:
+def two_sample_z_test(sample_1, sample_2, mu_diff=0, **kwargs) -> StatRes:
 
     two_sample_z_test.name = 'two_sample_z_test'
     mu_1, mu_2 = np.mean(sample_1), np.mean(sample_2)
@@ -61,7 +61,7 @@ def two_sample_z_test(sample_1, sample_2, mu_diff=0) -> StatRes:
     pval = 2*(1 - norm.cdf(abs(z)))
     return StatRes(p_value=pval, directionality=directionality , z_score=z, name=two_sample_z_test.name)
 
-def proportion_test(gene_set, pathway_genes, relevant_pathways):
+def proportion_test(gene_set, pathway_genes, relevant_pathways, **kwargs):
     import gseapy as gs
     results = gs.enrichr(gene_set, pathway_genes, organism='Human')
     results_df = results.results
