@@ -1,9 +1,13 @@
 """"
-This script is used to generate and save propagation score for a variation of parameters
+This script is used to generate and save propagation score for a variety 
+of parameters
 """
+import sys
+from os import path, makedirs
+sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
 import utils as utils
 from utils import read_prior_set, get_propagation_input, save_propagation_score, get_time
-from os import path, makedirs
+
 from propagation_routines import propagate_network
 from args import Args
 import pickle as pl
@@ -11,15 +15,18 @@ import numpy as np
 
 propagation_results_dir = path.join('output', 'propagation_results')
 args = Args(None, is_create_output_folder=False)
-alpha = [0.8, 0.9, 0.95, 0.975, 1]
-sheet_names = ['Suppl. Table 4A'] * len(alpha)
-prior_set_conditions = ['huntington_DDA_significant'] * len(alpha)
+alpha = [0.9, 1]
+sheet_names = ['EV'] * len(alpha) # ['Suppl. Table 4A'] * len(alpha)
+# function name to read data (from prior_conditions.py):
+prior_set_conditions = ['colorectal_cancer']  # ['huntington_DDA_significant'] * len(alpha)
 propagation_input_type_list = ['abs_Score'] * len(alpha)
 
 network_graph = utils.read_network(args.network_file)
 
 fc_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())
 prop_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())
+
+# Run:
 for c, condition in enumerate(prior_set_conditions):
 
     # loading arguments
