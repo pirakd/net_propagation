@@ -43,10 +43,9 @@ def propagate_network(network, propagation_input, args:Args, genes=None, prior_s
     matrix, genes = generate_similarity_matrix(network, genes)
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
-    effective_prior_set = [x for x in prior_set if x in gene_indexes.keys()]
     if prior_set:
         # gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
-        gene_scores = propagate([x for x in effective_prior_set], propagation_input, matrix, gene_indexes, num_genes, args)
+        gene_scores = propagate([x for x in propagation_input.keys()], propagation_input, matrix, gene_indexes, num_genes, args)
         # gene_scores = np.sum(np.array(gene_scores), axis=0)
     else:
         gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
