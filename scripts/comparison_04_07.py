@@ -17,7 +17,7 @@ colls_names = ['Significant genes proportion test', 'Log2FC signed', 'Propagatio
 alpha_values_list = [0.90, 0.95]
 min_genes_in_pathway = 10
 min_genes_for_display = 3
-
+minimum_pathway_adjusted_p_value_for_display = 1
 # colorectal cancer
 # all_genes_condition = colorectal_cancer
 # significant_genes_condition = colorectal_cancer_significant
@@ -25,12 +25,18 @@ min_genes_for_display = 3
 # huntingtons
 all_genes_condition = huntington_DDA
 significant_genes_condition = huntington_DDA_significant
+signed_input = 'Score'
+unsigned_input = 'abs_Score_all'
 
 n_tests = len(alpha_values_list)
 n_colls = len(colls_names)
 
 # Huntington
-interesting_pathways_keywords = ['KEGG']
+interesting_database = ['KEGG']
+interesting_pathways_keywords = ['calcium_signaling', 'lysosome', 'cytokine_receptor', 'NEUROACTIVE_LIGAND_RECEPTOR',
+                                 'NOTCH_SIGNALING_PATHWAY', 'focal_adhesion', 'ECM_RECEPTOR_INTERACTION']
+
+
 sheet_names_list = ['Table_A'] * n_tests
 statistic_test_list = ['wilcoxon_rank_sums_test'] * n_tests
 
@@ -58,9 +64,9 @@ for i in range(n_tests):
     reference_scores = {x: xx for x, xx in reference_scores.items() if x in network_genes_ids}
 
     # load propagation scores
-    args.propagation_input_type = 'abs_Score_all'
+    args.propagation_input_type = unsigned_input
     unsigned_gene_scores, _, _ = load_propagation_scores(args, normalize_score=True)
-    args.propagation_input_type = 'Score'
+    args.propagation_input_type = signed_input
     signed_gene_scores, genes_idx_to_id, genes_id_to_idx = load_propagation_scores(args, normalize_score=True)
 
     # load all MSigDB pathways and their associated genes
@@ -69,7 +75,8 @@ for i in range(n_tests):
     ids_to_names = {xx: x for x, xx in names_to_ids.items()}
 
     # filter pathway according to a defined condition
-    genes_by_pathway_interesting = {x: xx for x, xx in genes_by_pathway_all.items() if any(key in x for key in interesting_pathways_keywords)}
+    genes_by_pathway_interesting = {x: xx for x, xx in genes_by_pathway_all.items() if any(key in x for key in interesting_database)}
+    genes_by_pathway_interesting = {x: xx for x, xx in genes_by_pathway_interesting.items() if any(str.upper(key) in x for key in interesting_pathways_keywords)}
     interesting_pathways_names = list(genes_by_pathway_interesting.keys())
 
     filtered_genes_by_pathway = {pathway: [id for id in genes_by_pathway_interesting[pathway] if id in genes_id_to_idx] for pathway
@@ -153,7 +160,7 @@ for i in range(n_tests):
         adj_p_vals_mat[:, i] = bh_correction(results[i].p_value)
         directions_mat[:, i] = results[i].direction
 
-    keep_rows = np.nonzero(np.any(adj_p_vals_mat < 0.05, axis=1))[0]
+    keep_rows = np.nonzero(np.any(adj_p_vals_mat <= minimum_pathway_adjusted_p_value_for_display, axis=1))[0]
     title = 'Pathway Enrichment, Only significant paths({}\{})'.format(len(keep_rows), len(pathways_with_many_genes))
     pathways_with_many_genes = [pathways_with_many_genes[x] for x in keep_rows]
 
