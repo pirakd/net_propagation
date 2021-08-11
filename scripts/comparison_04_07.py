@@ -14,19 +14,20 @@ from collections import namedtuple
 Results = namedtuple('Results', 'p_value direction adj_p_value')
 args = Args(test_name)
 colls_names = ['Significant genes proportion test', 'Log2FC signed', 'Propagation signed',
-              'Propagation unsigned']
+              ]#'Propagation unsigned']
 
-alpha_values_list = [0.90, 0.95]
+alpha_values_list = [0.90]
 min_genes_in_pathway = 10
 min_genes_for_display = 3
-minimum_pathway_adjusted_p_value_for_display = 1
+minimum_pathway_adjusted_p_value_for_display = 0.05
+minimum_pathway_log_p_value_for_display = 3 # only print log1(p) scores > 3 
 # colorectal cancer
-# all_genes_condition = colorectal_cancer
-# significant_genes_condition = colorectal_cancer_significant
+all_genes_condition = colorectal_cancer
+significant_genes_condition = colorectal_cancer_significant
 
 # huntingtons
-all_genes_condition = huntington_DDA
-significant_genes_condition = huntington_DDA_significant
+# all_genes_condition = huntington_DDA
+# significant_genes_condition = huntington_DDA_significant
 signed_input = 'Score'
 unsigned_input = 'abs_Score_all'
 
@@ -35,11 +36,10 @@ n_colls = len(colls_names)
 
 # Huntington
 interesting_database = ['KEGG']
-interesting_pathways_keywords = ['calcium_signaling', 'lysosome', 'cytokine_receptor', 'NEUROACTIVE_LIGAND_RECEPTOR',
-                                 'NOTCH_SIGNALING_PATHWAY', 'focal_adhesion', 'ECM_RECEPTOR_INTERACTION']
+interesting_pathways_keywords = ['_']
 
 
-sheet_names_list = ['Table_A'] * n_tests
+sheet_names_list = ['EV'] * n_tests
 statistic_test_list = ['wilcoxon_rank_sums_test'] * n_tests
 
 # load network
@@ -173,4 +173,5 @@ for i in range(n_tests):
     res = -np.log10(p_vals_mat)
     fig_out_dir = path.join(args.output_folder, fig_name)
     plot_enrichment_table(res, adj_p_vals_mat, directions_mat, pathways_with_many_genes, fig_out_dir,
-                          experiment_names=colls_names, title=title, res_type='-log10(p_val)')
+                          experiment_names=colls_names, title=title, res_type='-log10(p_val)',
+                          minimum_pathway_log_p_value_for_display=minimum_pathway_log_p_value_for_display)

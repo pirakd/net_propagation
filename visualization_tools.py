@@ -6,15 +6,21 @@ from matplotlib.patches import Rectangle, Patch
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def plot_enrichment_table(enrichment_table, adj_p_mat, direction, interesting_pathways, save_dir=None, experiment_names=None,
-                          title=None, res_type=None):
+                          title=None, res_type=None, minimum_pathway_log_p_value_for_display=None):
     fig, ax = plt.subplots()
 
     enriched_clusters = np.nonzero(np.sum(enrichment_table, axis=0) != 0)[0]
     found_pathways = np.nonzero(np.sum(enrichment_table, axis=1) != 0)[0]
     enrichment_table = enrichment_table[:, enriched_clusters][found_pathways, :]
     interesting_pathways_filtered = {x: xx for x, xx in enumerate(interesting_pathways) if x in found_pathways}
+    
+    # set values lower than a given threshold to zero:
+    if minimum_pathway_log_p_value_for_display:
+        enrichment_table[abs(enrichment_table)<minimum_pathway_log_p_value_for_display] = 0.0
+
     annotation_map = (np.round(enrichment_table, 3)).astype(str)
     annotation_map[annotation_map == '0.0'] = ''
+
     y_ticks = [x[:60] for x in interesting_pathways_filtered.values()]
     important_indexes = np.where(adj_p_mat < 0.05)
 
