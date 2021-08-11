@@ -61,9 +61,15 @@ def two_sample_z_test(sample_1, sample_2, mu_diff=0, **kwargs) -> StatRes:
     pval = 2*(1 - norm.cdf(abs(z)))
     return StatRes(p_value=pval, directionality=directionality , z_score=z, name=two_sample_z_test.name)
 
-def proportion_test(gene_set, pathway_genes, relevant_pathways, **kwargs):
+
+def proportion_test(gene_set, pathway_genes, relevant_pathways, constrain_to_network_genes=False, **kwargs):
     import gseapy as gs
-    results = gs.enrichr(gene_set, pathway_genes, organism='Human')
+    if kwargs['constrain_to_netowrk_genes']:
+        network_genes = kwargs['network_genes']
+        results = gs.enrichr(gene_set, pathway_genes, organism='Human', background=network_genes)
+    else:
+        results = gs.enrichr(gene_set, pathway_genes, organism='Human')
+
     results_df = results.results
     results_dict = {}
     terms = list(results_df.Term)

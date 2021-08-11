@@ -133,25 +133,33 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type, **kwargs):
     :param input_type:
     :return:
     """
+    assert 'network' in kwargs, 'Network must be provided to get_propagation_input method in order to propagate with input_type=\'abs_Score_all\''
+    network = kwargs['network']
+
     if input_type == 'ones':
-        inputs = {x: 1 for x in prior_gene_dict.values()}
+        inputs = {x: 1 for x in prior_gene_dict.values() if x in network.nodes}
     elif input_type is None:
-        inputs = {x: 1 for x in prior_gene_dict.values()}
+        inputs = {x: 1 for x in prior_gene_dict.values() if x in network.nodes}
     elif input_type == 'abs_Score':
-        inputs = ({id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()})
+        inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score'])) for name, id in prior_gene_dict.items()}
     elif input_type == 'Score':
         inputs = {id: float(prior_data[prior_data.Gene_Name == name]['Score']) for name, id in prior_gene_dict.items()}
     elif input_type == 'abs_Score_all':
-        assert 'network' in kwargs, 'Network must be provided to get_propagation_input method in order to propagate with input_type=\'abs_Score_all\''
-        network = kwargs['network']
         inputs = {id: np.abs(float(prior_data[prior_data.Gene_Name == name]['Score']))
-                  for name, id in prior_gene_dict.items() if id in network.nodes}
+                  for name, id in prior_gene_dict.items()}
         mean_input = np.mean([x for x in inputs.values()])
         for id in network.nodes:
             if id not in inputs:
                 inputs[id] = mean_input
+    elif input_type == 'ones_all':
+        inputs = dict()
+        for id in network.nodes:
+            if id not in inputs:
+                inputs[id] = 1
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
+
+    inputs = {id: input_score for id, input_score in inputs.items() if id in network.nodes}
     return inputs
 
 
@@ -196,10 +204,13 @@ def load_propagation_scores(args, normalize_score = True):
 def normalize_propagation_inputs(gene_scores, genes_idx_to_id, args):
     genes_id_to_idx = {xx:x for x, xx in genes_idx_to_id.items()}
     propagation_norm_file_name = '{}_{}_{}_1'.format(args.propagation_input_type, args.sheet_name, args.condition_function_name)
+
     propagation_norm_res_path = path.join(args.propagation_scores_path, propagation_norm_file_name)
     norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
 
     norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
+    assert norm_genes_idx_to_id == genes_idx_to_id, 'Normalization scores did not come from the same network'
+
     norm_scores = np.array(norm_propagation_res_dict['gene_prop_scores'])
     zero_normalization_genes = np.nonzero(norm_scores == 0)[0]
     zero_prop_genes = np.nonzero(gene_scores == 0)[0]
