@@ -1,7 +1,9 @@
 """
 This script creates a name-id mapping of all genes in the network and saves it afterwards
 """
-
+import sys
+from os import path
+sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
 import utils as utils
 import numpy as np
 from args import Args

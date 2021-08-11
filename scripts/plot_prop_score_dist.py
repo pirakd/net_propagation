@@ -1,6 +1,8 @@
+import sys
+from os import path, makedirs
+sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
 import utils as utils
 from utils import read_prior_set, load_pathways_genes, load_interesting_pathways, get_propagation_input, load_file
-from os import path, makedirs
 from propagation_routines import propagate_network
 from os import path
 import numpy as np
