@@ -78,7 +78,18 @@ def plot_enrichment_table(enrichment_table, adj_p_mat, direction, interesting_pa
 
 def visualise_pathway(network_graph, pathway_genes, reference_scores, propagation_scores, pathway_name, id_to_label_dict=None,
                       mark_second_neighbors=True, significant_genes=None, save_dir=None):
-    ###  draw pathway genes
+    """
+
+    :param network_graph: networkx Graph of the whole network
+    :param pathway_genes: a list of gene ids in the pathway
+    :param reference_scores: a dictionary of the format gene_id: score of the reference score
+    :param propagation_scores: a dictionary of the format gene_id: score of the propagation score
+    :param pathway_name: pathway name, string
+    :param id_to_label_dict: a diction of the format gene_id: label
+    :param mark_second_neighbors: whether to mark second order neighbors with dashed lines
+    :param significant_genes: a list of significant gene ids
+    :param save_dir: directory to save figure
+    """
     # generate pathway subgraph
     G = nx.Graph()
     labels = dict()
@@ -119,6 +130,8 @@ def visualise_pathway(network_graph, pathway_genes, reference_scores, propagatio
 
     if significant_genes:
         significant_nodes = [node for node in G.nodes if id_to_label_dict[node] in significant_genes]
+    else:
+        significant_genes = []
 
     # draw graph
     colorbar_edge = np.maximum(np.abs(np.min(gene_propagation_scores)), np.abs(np.max(gene_propagation_scores)))
