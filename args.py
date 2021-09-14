@@ -17,7 +17,7 @@ class Args:
         self.sheet_name = 'Table_A'
         self.condition_function_name = 'cov_data'
         self.interesting_pathway_file = 'interesting_pathways.txt'
-        self.genes_names_file = 'gen'
+        self.genes_names_file = 'genes_names'
 
 
         self.experiment_file = 'scores.xlsx'
@@ -81,7 +81,7 @@ class CovArgs(Args):
     def __init__(self, test_name=None, is_create_output_folder=True):
         super().__init__(is_create_output_folder=False)
         self.network_file = 'H_sapiens.net'
-        self.sheet_name = 'Table_A'
+        self.sheet_name = 'India2_24h-IC19_24h'
         self.propagation_input_type = 'Score'
         self.condition_function_name = 'cov_data'
         self.interesting_pathway_file = 'interesting_pathways.txt'
@@ -99,7 +99,8 @@ class HDArgs(Args):
         self.genes_names_file = 'genes_names_HD'
         self.get_derived_parameters(is_create_output_folder=True)
 
-class CollerectaArgs(Args):
+
+class ColorectalArgs(Args):
     def __init__(self, test_name=None, is_create_output_folder=True):
         super().__init__(is_create_output_folder=False)
         self.data_file = 'colorectal_data'

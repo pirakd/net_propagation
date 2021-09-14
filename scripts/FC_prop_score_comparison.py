@@ -73,7 +73,7 @@ for i in range(n_tests):
             genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
         else:
             # Read the h_sapiens network
-            network_graph = utils.read_network(args.network_file)
+            network_graph = utils.read_network(args.network_file_path)
             # Using the graph, either run the propagation or load previously acquired propagation results
             _, _, genes_id_to_idx, gene_scores = propagate_network(network_graph, propagation_input, args,
                                                                    prior_set=list(prior_gene_dict.values()))

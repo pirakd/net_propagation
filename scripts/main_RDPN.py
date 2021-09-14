@@ -7,12 +7,12 @@ from statistic_methods import get_sample_p_values, bh_correction
 from propagation_routines import propagate_network, propagate_networks, propagate_networks_parallel
 from args import Args
 import pickle as pl
-test_name = 'propagation_main'
+test_name = 'main_RDPN'
 args = Args(test_name)
 n_processes = 1
 
 #Read the network
-network_graph = utils.read_network(args.network_file)
+network_graph = utils.read_network(args.network_file_path)
 
 
 #Load prior set

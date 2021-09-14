@@ -17,7 +17,7 @@ os.makedirs(output_folder_name, exist_ok=True)
 number_of_networks = 100
 
 #Read the h_sapiens network
-network_graph = read_network(args.network_file)
+network_graph = read_network(args.network_file_path)
 
 E = network_graph.number_of_edges()
 Q = 10
