@@ -8,7 +8,6 @@ from utils import listdir_nohidden, load_file
 import scipy.sparse
 from args import Args
 
-
 def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, args:Args):
     F_t = np.zeros(num_genes)
     if not propagation_input:
@@ -39,19 +38,30 @@ def generate_similarity_matrix(network, genes=None):
     return matrix, genes
 
 
-def propagate_network(network, propagation_input, args:Args, genes=None, prior_set=None):
+def propagate_network(network, propagation_input, args:Args, genes=None):
     matrix, genes = generate_similarity_matrix(network, genes)
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
-    if prior_set:
-        # gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
-        gene_scores = propagate([x for x in propagation_input.keys()], propagation_input, matrix, gene_indexes, num_genes, args)
-        # gene_scores = np.sum(np.array(gene_scores), axis=0)
-    else:
-        gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
-                               num_genes=num_genes, args=args)
 
-    return matrix, num_genes, gene_indexes, gene_scores
+    if args.remove_self_propagation:
+        self_propagation = list()
+    else:
+        self_propagation = None
+
+    if (not args.remove_self_propagation) or args.alpha==1:
+        gene_scores = propagate([x for x in propagation_input.keys()], propagation_input, matrix, gene_indexes, num_genes, args)
+    else:
+        gene_scores = list()
+        for x in list(propagation_input.keys()):
+            gene_scores.append(propagate([x], propagation_input, matrix, gene_indexes, num_genes, args))
+            self_propagation.append(gene_scores[-1][gene_indexes[x]])
+            gene_scores[-1][gene_indexes[x]] = 0
+
+        gene_scores = np.sum(np.array(gene_scores), axis=0)
+        correction_factor = len(propagation_input.keys()) / (len(propagation_input.keys())-1)
+        gene_scores[[gene_indexes[x] for x in list(propagation_input.keys())]] *= correction_factor
+
+    return matrix, num_genes, gene_indexes, gene_scores, np.array(self_propagation)
 
 
 def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagation_input=None,
@@ -105,8 +115,6 @@ def propagate_networks_parallel(network, args, genes=None, prior_set=None,
         gene_scores = \
             [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, args=args, propagation_input=propagation_input, genes=genes, prior_set=prior_set),
                                                       network_dirs), total=n_networks_to_process, desc='propagating networks')]
-
-
     return np.array(gene_scores)
 
 
