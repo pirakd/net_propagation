@@ -192,7 +192,7 @@ def save_propagation_score(file_name, propagation_scores, prior_set, propagation
     if random_networks_prop_score:
         save_dict['random_prop_scores'] = random_networks_prop_score
     save_file(save_dict, propagation_results_path)
-
+    return save_dict
 
 def load_propagation_scores(args, add_self_propagation=False, normalize_score = True):
     propagation_file_name = '{}_{}_{}_{}'.format(args.propagation_input_type, args.sheet_name, args.condition_function_name,
@@ -207,13 +207,17 @@ def load_propagation_scores(args, add_self_propagation=False, normalize_score = 
          genes_scores[[genes_id_to_idx[id] for id in propagation_input]] += propagation_res_dict['self_propagation']
 
     if normalize_score:
-        genes_scores, genes_idx_to_id, genes_id_to_idx = normalize_propagation_inputs(genes_scores, genes_idx_to_id, args)
+        genes_scores, genes_idx_to_id, genes_id_to_idx = normalize_propagation_scores(genes_scores, genes_idx_to_id, args)
 
     return genes_scores, genes_idx_to_id, genes_id_to_idx, propagation_input
 
-def normalize_propagation_inputs(gene_scores, genes_idx_to_id, args):
+def normalize_propagation_scores(gene_scores, genes_idx_to_id, args):
     genes_id_to_idx = {xx:x for x, xx in genes_idx_to_id.items()}
-    propagation_norm_file_name = '{}_{}_{}_1'.format(args.propagation_input_type, args.sheet_name, args.condition_function_name)
+
+    if args.normalization_method == 'EC':
+        propagation_norm_file_name = '{}_{}_{}_1'.format(args.propagation_input_type, args.sheet_name, args.condition_function_name)
+    else:
+        propagation_norm_file_name = 'ones_{}_{}_{}'.format(args.sheet_name, args.condition_function_name, args.alpha)
 
     propagation_norm_res_path = path.join(args.propagation_scores_path, propagation_norm_file_name)
     norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
@@ -221,7 +225,12 @@ def normalize_propagation_inputs(gene_scores, genes_idx_to_id, args):
     norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
     assert norm_genes_idx_to_id == genes_idx_to_id, 'Normalization scores did not come from the same network'
 
+    propagation_input = norm_propagation_res_dict['propagation_input']
+
     norm_scores = np.array(norm_propagation_res_dict['gene_prop_scores'])
+    if args.normalization_method != 'EC' and args.add_self_prop_to_norm_factor:
+        norm_scores[[genes_id_to_idx[id] for id in propagation_input]] += norm_propagation_res_dict['self_propagation']
+
     zero_normalization_genes = np.nonzero(norm_scores == 0)[0]
     zero_prop_genes = np.nonzero(gene_scores == 0)[0]
     genes_to_delete = list(set(zero_normalization_genes).difference(zero_prop_genes))

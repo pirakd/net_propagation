@@ -32,6 +32,10 @@ class Args:
         self.test_name = test_name
         self.remove_self_propagation = False
 
+        # post processing arguments
+        self.normalization_method = 'ones'  #ones\EC
+        self.add_self_prop_to_norm_factor = False
+
         # init derived params
         self.data_dir = None
         self.output_folder = None
@@ -94,6 +98,7 @@ class CovArgs(Args):
         self.remove_self_propagation = True
 
 
+
 class HDArgs(Args):
     def __init__(self, test_name=None, is_create_output_folder=True):
         super().__init__(is_create_output_folder=False)
@@ -104,7 +109,7 @@ class HDArgs(Args):
         self.interesting_pathway_file = 'None'
         self.genes_names_file = 'HD_symbol'
         self.get_derived_parameters(is_create_output_folder=True)
-
+        self.alpha = 0.9
 
 class ColorectalArgs(Args):
     def __init__(self, test_name=None, is_create_output_folder=True):
