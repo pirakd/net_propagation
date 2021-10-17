@@ -10,7 +10,7 @@ class Args:
 
         # ~~~ general parameters ~~~
         self.root_folder = path.dirname(path.realpath(__file__))
-        self.data_file = 'cov_data'
+        self.data_file = 'inputs'
         self.network_file = 'H_sapiens.net'
         self.experiment_file = 'scores'
         self.propagation_input_type = 'ones'
@@ -52,6 +52,7 @@ class Args:
         # ~~~ derived parameters ~~~
     def get_derived_parameters(self, is_create_output_folder=True):
         self.set_condition_function()
+        self.experiment_name = self.experiment_file.split('.')[0]
 
         self.data_dir = path.join(self.root_folder, self.data_file)
         if is_create_output_folder:
@@ -62,20 +63,18 @@ class Args:
 
         self.condition_function = get_condition_function(self.condition_function_name)
         # get conditions on experiment
-        self.network_file_path = path.join(self.data_dir, self.network_file)
-        self.experiment_file_path = path.join(self.data_dir, self.experiment_file)
-        self.pathway_file_dir = path.join(self.data_dir, self.pathway_file)
-
+        self.network_file_path = path.join(self.data_dir, 'networks', self.network_file)
+        self.experiment_file_path = path.join(self.data_dir, 'experiments_data', self.experiment_file)
+        self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
         if self.interesting_pathway_file:
-            self.interesting_pathway_file_dir = path.join(self.data_dir, self.interesting_pathway_file)
+            self.interesting_pathway_file_dir = path.join(self.data_dir, 'pathways', self.interesting_pathway_file)
         self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
         if self.genes_names_file:
-            self.genes_names_file_path = path.join(self.root_folder, 'genes_names', self.genes_names_file)
+            self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
         else:
             self.genes_names_file_path = None
-
         self.propagation_scores_path = path.join(self.root_folder, self.propagation_folder)
-        return self.data_dir, self.output_folder, self.condition_function, self.network_file,\
+        return self.experiment_name, self.data_dir, self.output_folder, self.condition_function, self.network_file,\
                self.experiment_file_path, self.pathway_file_dir, self.interesting_pathway_file_dir,\
                self.genes_names_file_path, self.propagation_scores_path
 
@@ -94,9 +93,37 @@ class CovArgs(Args):
         self.interesting_pathway_file = 'interesting_pathways.txt'
         self.genes_names_file = 'H_sapiens_symbol'
         self.test_name = test_name
-        self.get_derived_parameters(is_create_output_folder=is_create_output_folder)
         self.remove_self_propagation = True
+        self.get_derived_parameters(is_create_output_folder=is_create_output_folder)
 
+
+class CovArgs(Args):
+    def __init__(self, test_name=None, is_create_output_folder=True):
+        super().__init__(is_create_output_folder=False)
+        self.data_file = 'cov_data_old'
+        self.network_file = 'H_sapiens.net'
+        self.sheet_name = 'India2_24h-IC19_24h'
+        self.propagation_input_type = 'ones'
+        self.condition_function_name = 'cov_data'
+        self.interesting_pathway_file = 'interesting_pathways.txt'
+        self.genes_names_file = 'H_sapiens_symbol'
+        self.test_name = test_name
+        self.remove_self_propagation = True
+        self.get_derived_parameters(is_create_output_folder=is_create_output_folder)
+
+class MockArgs(Args):
+    def __init__(self, test_name=None, is_create_output_folder=True):
+        super().__init__(is_create_output_folder=False)
+        self.experiment_file = 'mock_scores.xlsx'
+        self.network_file = 'H_sapiens.net'
+        self.sheet_name = 'Table_A'
+        self.propagation_input_type = 'Score'
+        self.condition_function_name = 'cov_data'
+        self.interesting_pathway_file = 'mock_interesting_pathways.txt'
+        self.genes_names_file = 'H_sapiens_symbol'
+        self.test_name = test_name
+        self.remove_self_propagation = True
+        self.get_derived_parameters(is_create_output_folder=is_create_output_folder)
 
 
 class HDArgs(Args):
@@ -123,7 +150,7 @@ class ColorectalArgs(Args):
         self.interesting_pathway_file = None
         self.get_derived_parameters(is_create_output_folder=True)
         self.genes_names_file = 'H_sapiens_symbol'
-
+        self.get_derived_parameters(is_create_output_folder=True)
 
 if __name__ == '__main__':
     # instantiate an argument object with default parameter

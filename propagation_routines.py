@@ -70,6 +70,7 @@ def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagat
     if random_networks_dir and os.path.isdir(random_networks_dir):
         random_networks_files = listdir_nohidden(random_networks_dir)
     gene_scores = []
+    self_propagations = []
 
     if random_networks_files:
         networks_to_process = np.min([len(random_networks_files), n_networks])
@@ -77,8 +78,9 @@ def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagat
         for n, network_file_name in enumerate(random_networks_files[:networks_to_process]):
             print('propagating network {}'.format(n))
             H = load_file(os.path.join(random_networks_dir, network_file_name))
-            matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, args, genes, prior_set)
+            matrix, num_genes, gene_indexes, current_gene_scores, current_self_propagation = propagate_network(H, propagation_input, args, genes)
             gene_scores.append(current_gene_scores)
+            self_propagations.append(current_self_propagation)
 
     else:
         E = network.number_of_edges()
@@ -89,14 +91,13 @@ def propagate_networks(network,  args:Args, genes=None, prior_set=None, propagat
             matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, genes=genes, prior_set=prior_set, args=args)
             gene_scores.append(current_gene_scores)
 
-    return gene_indexes, np.array(gene_scores)
+    return gene_indexes, np.array(gene_scores), self_propagations
 
 
-def parallel_propagate(network_dir=None, propagation_input=None, args=None, genes=None,  prior_set=None):
+def parallel_propagate(network_dir=None, propagation_input=None, args=None, genes=None):
     H = load_file(network_dir)
-    matrix, num_genes, gene_indexes, current_gene_scores = propagate_network(H, propagation_input, args, genes, prior_set)
-    return current_gene_scores
-
+    matrix, num_genes, gene_indexes, current_gene_scores, self_propagation = propagate_network(H, propagation_input, args, genes)
+    return [current_gene_scores, self_propagation]
 
 def propagate_networks_parallel(network, args, genes=None, prior_set=None,
                                 propagation_input=None, random_networks_dir=None, n_networks=100, n_processes=1):
@@ -112,26 +113,8 @@ def propagate_networks_parallel(network, args, genes=None, prior_set=None,
     network_dirs = (os.path.join(random_networks_dir, random_networks_files[i]) for i in range(n_networks_to_process))
 
     with mp.Pool(processes=n_processes) as pool:
-        gene_scores = \
-            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, args=args, propagation_input=propagation_input, genes=genes, prior_set=prior_set),
+        results = \
+            [i for i in tqdm.tqdm(pool.imap_unordered(partial(parallel_propagate, args=args, propagation_input=propagation_input, genes=genes),
                                                       network_dirs), total=n_networks_to_process, desc='propagating networks')]
-    return np.array(gene_scores)
-
-
-def analytic_propagation(network, propagation_input, args: Args, genes=None, prior_set=None):
-    matrix, genes = generate_similarity_matrix(network, genes)
-    net_size = matrix.shape[0]
-    I = np.eye(net_size)
-    gene_score = args.alpha * np.linalg.inv((np.dot(I-(1-args.alpha), matrix)))
-
-    num_genes = len(genes)
-    gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
-    effective_prior_set = [x for x in prior_set if x in gene_indexes.keys()]
-    if prior_set:
-        gene_scores = [propagate([x], propagation_input, matrix, gene_indexes, num_genes, args) for x in effective_prior_set]
-        gene_scores = np.sum(np.array(gene_scores), axis=0)
-    else:
-        gene_scores =propagate(genes, propagation_input=None, matrix=matrix, gene_indexes=gene_indexes,
-                               num_genes=num_genes, args=args)
-
-    return matrix, num_genes, gene_indexes, gene_scores
+    genes_scores, self_propagations = list(zip(*results))
+    return np.array(genes_scores), self_propagations

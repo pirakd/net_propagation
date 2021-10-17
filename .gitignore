@@ -13,6 +13,5 @@ handouts/*
 untracked_files/*
 */output/*
 propagation_scores/*
-*data
 /scripts/scratches/*
-scripts/Enrichr/*
+/scripts/Enrichr/*

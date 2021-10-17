@@ -1,0 +1,60 @@
+Reactome innate immune system
+Reactome neutrophil degranulation
+Reactome membrane trafficking
+Reactome vesicle mediated transport
+KEGG MAPK signaling pathway
+Reactome cytokine signaling in immune system
+ Reactome hemostasis
+KEGG GNRH signaling pathway
+Biocarta AT1R pathway
+PID VEGFR1/2 pathway
+Reactome infectious disease
+Reactome platelet activation signaling and aggregation
+KEGG gap junction
+Reactome post translational protein modification
+KEGG adherens junction
+PID CDC42 pathway
+Reactome metabolism of vitamins and cofactors
+KEGG focal adhesion
+PID ret pathway
+Reactome interferon signaling
+KEGG complement and coagulation cascades
+Naba ECM regulators
+Reactome scavenging of heme from plasma
+Reactome transport of nucleotide sugars
+Biocarta AMI pathway
+Biocarta fibrinolysis pathway
+Reactome formation of the cornified envelope
+Reactome PTK6 expression
+Reactome intrinsic pathway of fibrin clot formation
+Reactome common pathway of fibrin clot formation
+Reactome regulation of insulin like growth factor IGF transport
+Reactome transport and synthesis of PAPS
+Biocarta intrinsic pathway
+Reactome TRP channels
+Reactome G2/M DNA replication checkpoint
+Reactome DNA replication initiation
+Reactome TNF signaling
+Reactome metallothioneins bind metals
+Reactome CD22 mediated BCR regulation
+Reactome interferon alpha beta signaling
+Reactome cytokine signaling in immune system
+Reactome chemokine receptors bind chemokines
+Reactome interferon signaling
+Reactome interleukin 10 signaling
+KEGG allograft rejection
+KEGG intestinal immune network for IGA production
+KEGG type I diabetes mellitus
+KEGG graft versus host disease
+Reactome gli proteins activate HH responsive genes
+Biocarta asbcell pathway
+KEGG cytokine cytokine receptor interaction
+Reactome peptide ligand binding receptors
+Naba secreted factors
+Reactome negative regulation of NMDA receptor neurons
+Reactome translation
+Reactome ficolins bind to carbohydrate on the target cell surface
+KEGG cytosolic DNA sensing pathway
+Reactome class A 1 rhodopsin like receptors
+Reactome fertilization
+KEGG_HUNTINGTONS_DISEASE
