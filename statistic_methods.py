@@ -35,7 +35,6 @@ def empirical_mean_diff(experiment_scores, elements_scores, n_draws=5000, **kwar
     p_val, direction = get_sample_p_values(mean_scores, random_scores, two_tailed=True)
     return StatRes(p_value=p_val[0], directionality=direction[0], name=empirical_mean_diff.name)
 
-
 def man_whit_U_test(experiment_scores, elements_scores, **kwargs) -> StatRes:
     man_whit_U_test.name = 'Mann–Whitney_U_test'
     p_vals = scipy.stats.mannwhitneyu(experiment_scores, elements_scores).pvalue
@@ -110,7 +109,7 @@ def get_sample_p_values(original_network_scores, random_networks_scores, two_tai
     p_values_stepes = np.arange(1, n_experiments + 2, 1) * step
     if not two_tailed:
         p_values = p_values_stepes[gene_score_rank]
-        return p_values
+        return p_values , None, gene_score_rank
     else:
         higher_than_half = gene_score_rank >= (n_experiments / 2)
         p_values = np.zeros(gene_score_rank.shape)
@@ -118,4 +117,4 @@ def get_sample_p_values(original_network_scores, random_networks_scores, two_tai
         p_values[higher_than_half] =\
             1-(p_values_stepes[gene_score_rank[higher_than_half] - 1])
         p_values = p_values * 2
-        return p_values, higher_than_half
+        return p_values, higher_than_half, gene_score_rank
