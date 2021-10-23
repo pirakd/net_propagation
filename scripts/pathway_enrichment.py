@@ -25,10 +25,11 @@ class PropagationTask:
 
 
 class RawScoreTask:
-    def __init__(self, name, score_file_path, statistic_test, condition_function, propagation_input_type,
-                 constrain_to_network_genes ):
+    def __init__(self, name, score_file_path, sheet_name, statistic_test, condition_function, propagation_input_type,
+                 constrain_to_network_genes=True):
         self.name = name
         self.score_file_path = score_file_path
+        self.sheet_name = sheet_name
         self.statistic_test = statistic_test
         self.condition_function = condition_function
         self.propgation_input_type = propagation_input_type
@@ -41,12 +42,12 @@ class GeneralArgs:
                  output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment'):
 
         self.minimum_gene_per_pathway = 1
-        self.display_only_significant_pathways = False
+        self.display_only_significant_pathways = True
         self.network_file_path = network_path
         self.genes_names_file_path = genes_names_path
         self.pathway_databases = ['_']
         self.pathway_keywords = ['_']
-        self.significant_pathway_threshold = 5e-2
+        self.significant_pathway_threshold = 1
         if output_folder_name is None:
             output_folder_name = path.basename(__file__).split('.')[0]
         self.output_path, _ = create_output_folder(output_folder_name)
@@ -54,6 +55,7 @@ class GeneralArgs:
         self.interesting_pathway_path = interesting_pathway_path
         self.pathway_members_path = pathway_members_path
         self.figure_title = figure_title
+
 
 
 class PathwayResults:
@@ -70,21 +72,28 @@ def run(task_list, general_args):
     network_genes_ids = set(list(network_graph.nodes()))
 
     # load interesting pathways and pathway members
-    intersting_pathways = load_interesting_pathways(general_args.interesting_pathway_path)
+    if general_args.interesting_pathway_path is not None:
+        intersting_pathways = load_interesting_pathways(general_args.interesting_pathway_path)
+    else:
+        intersting_pathways = None
+
+    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path, intersting_pathways)
+    if intersting_pathways is None:
+        intersting_pathways = list(genes_by_pathway.keys())
+
     intersting_pathways = {x for x in intersting_pathways if
                                     any(key in x for key in general_args.pathway_databases)}
     intersting_pathways = {x for x in intersting_pathways if
                                     any(str.upper(key) in x for key in general_args.pathway_keywords)}
-    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path, intersting_pathways)
+
     names_to_ids =  convert_symbols_to_ids(genes_names_file_path=general_args.genes_names_file_path)
     ids_to_names = {xx: x for x, xx in names_to_ids.items()}
     pathways_to_display = set()
 
     for task in task_list:
-
         # load scores
         if isinstance(task, RawScoreTask):
-            all_genes, all_data, _ = read_prior_set(task.condition_function, args.experiment_file_path, args.sheet_name)
+            all_genes, all_data, _ = read_prior_set(task.condition_function, task.score_file_path, task.sheet_name)
             all_genes_dict = convert_symbols_to_ids(all_genes, general_args.genes_names_file_path)
             scores = get_propagation_input(all_genes_dict, all_data, task.propgation_input_type, network=network_graph)
 
@@ -134,6 +143,8 @@ def run(task_list, general_args):
                 directions_mat[p, t] = task.results[pathway].direction
         adj_p_vals_mat[indexes, t] = bh_correction(p_vals_mat[indexes, t])
         coll_names_in_heatmap.append(task.name)
+
+    n_pathways_before = len(pathways_to_display)
     if general_args.display_only_significant_pathways:
         keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.significant_pathway_threshold, axis=1))[0]
         n_pathways_before = len(pathways_to_display)
@@ -144,17 +155,25 @@ def run(task_list, general_args):
         directions_mat = directions_mat[keep_rows, :]
 
     row_names = ['({}) {}'.format(len(genes_by_pathway_filtered[pathway]), pathway) for pathway in pathways_to_display]
+
     res = -np.log10(p_vals_mat)
     fig_out_dir = path.join(general_args.output_path, general_args.figure_name)
     plot_enrichment_table(res, adj_p_vals_mat, directions_mat, row_names, fig_out_dir,
-                          experiment_names=coll_names_in_heatmap, title=general_args.figure_title, res_type='-log10(p_val)')
+                          experiment_names=coll_names_in_heatmap,
+                          title=general_args.figure_title + '{}/{}'.format(len(row_names), n_pathways_before),
+                          res_type='-log10(p_val)')
 
 
 if __name__ == '__main__':
     args = MockArgs(is_create_output_folder=False)
     propagation_scores_file = 'ones_mock_scores_Table_A_cov_data_0.9'
     normalization_score_file = 'ones_mock_scores_Table_A_cov_data_0.9'
-    task_1 = PropagationTask(name = 'first', propagation_file=propagation_scores_file,
+
+    task_1 = RawScoreTask(name='Raw Enrichment', score_file_path=args.experiment_file_path,
+                          sheet_name='Table_A', statistic_test=wilcoxon_rank_sums_test,
+                          condition_function=args.condition_function, propagation_input_type='Score')
+
+    task_2 = PropagationTask(name='Propagation Enrichment', propagation_file=propagation_scores_file,
                              normalization_file=normalization_score_file, statistic_test=wilcoxon_rank_sums_test,
                              target_field='gene_score', normalization_method='EC', constrain_to_experiment_genes=True)
 
@@ -162,5 +181,5 @@ if __name__ == '__main__':
                                interesting_pathway_path=args.interesting_pathway_file_dir,
                                pathway_members_path=args.pathway_file_dir)
 
-    task_list = [task_1]
+    task_list = [task_1, task_2]
     run(task_list, general_args)
