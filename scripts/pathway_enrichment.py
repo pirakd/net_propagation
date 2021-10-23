@@ -133,7 +133,7 @@ def run(task_list, general_args):
                 p_vals_mat[p, t] = task.results[pathway].p_value
                 directions_mat[p, t] = task.results[pathway].direction
         adj_p_vals_mat[indexes, t] = bh_correction(p_vals_mat[indexes, t])
-
+        coll_names_in_heatmap.append(task.name)
     if general_args.display_only_significant_pathways:
         keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.significant_pathway_threshold, axis=1))[0]
         n_pathways_before = len(pathways_to_display)
