@@ -41,7 +41,7 @@ def man_whit_U_test(experiment_scores, elements_scores, **kwargs) -> StatRes:
     direction = np.mean(experiment_scores) > np.mean(elements_scores)
     return StatRes(p_value=p_vals, directionality=direction, name=man_whit_U_test.name)
 
-def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='greater', **kwargs) -> StatRes:
+def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two-sided', **kwargs) -> StatRes:
     wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
     from scipy.stats import ranksums
     p_vals = scipy.stats.ranksums(experiment_scores, elements_scores, alternative= alternative).pvalue
