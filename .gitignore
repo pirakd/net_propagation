@@ -15,3 +15,5 @@ untracked_files/*
 propagation_scores/*
 /scripts/scratches/*
 /scripts/Enrichr/*
+*.xlsx
+Inputs/*
