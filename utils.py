@@ -207,31 +207,32 @@ def load_propagation_scores(args, add_self_propagation=False, normalize_score = 
                                                      str(args.alpha))
 
     propagation_results_path = path.join(args.propagation_scores_path, propagation_file_name)
-    propagation_res_dict = load_file(propagation_results_path, decompress=True)
+    propagation_res_dict: dict = load_file(propagation_results_path, decompress=True)
     genes_scores = np.array(propagation_res_dict['gene_prop_scores'])
     propagation_input = propagation_res_dict['propagation_input']
     genes_idx_to_id = propagation_res_dict['gene_idx_to_id']
     genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
     if add_self_propagation:
-         genes_scores[[genes_id_to_idx[id] for id in propagation_input]] += propagation_res_dict['self_propagation']
+        genes_scores[[genes_id_to_idx[id] for id in propagation_input]] += propagation_res_dict['self_propagation']
+        propagation_res_dict['gene_prop_score'] = genes_scores
 
     if normalize_score:
-        genes_scores, genes_idx_to_id, genes_id_to_idx = normalize_propagation_scores(genes_scores, genes_idx_to_id,
-                                                                                      args, normalization_file_name)
+        genes_normalized_scores, genes_idx_to_id, genes_id_to_idx = normalize_propagation_scores(genes_scores, genes_idx_to_id,                                                                           args, normalization_file_name)
+        propagation_res_dict['gene_prop_score'] = genes_normalized_scores
+    return propagation_res_dict
 
-    return genes_scores, genes_idx_to_id, genes_id_to_idx, propagation_input
 
 def normalize_propagation_scores(gene_scores, genes_idx_to_id, args, normalization_file_name=None):
     genes_id_to_idx = {xx: x for x, xx in genes_idx_to_id.items()}
     if normalization_file_name is None:
         if args.normalization_method == 'EC':
-            propagation_norm_file_name = '{}_{}_{}_{}_1'.format(args.propagation_input_type, args.experiment_name,
+            normalization_file_name = '{}_{}_{}_{}_1'.format(args.propagation_input_type, args.experiment_name,
                                                              args.sheet_name, args.condition_function_name)
         else:
-            propagation_norm_file_name = 'ones_{}_{}_{}_{}'.format(args.sheet_name, args.experiment_name,
+            normalization_file_name = 'ones_{}_{}_{}_{}'.format(args.sheet_name, args.experiment_name,
                                                                 args.condition_function_name, args.alpha)
 
-    propagation_norm_res_path = path.join(args.propagation_scores_path, propagation_norm_file_name)
+    propagation_norm_res_path = path.join(args.propagation_scores_path, normalization_file_name)
     norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
 
     norm_genes_idx_to_id = norm_propagation_res_dict['gene_idx_to_id']
@@ -255,3 +256,6 @@ def normalize_propagation_scores(gene_scores, genes_idx_to_id, args, normalizati
         genes_id_to_idx.pop(gene_id)
 
     return gene_scores, genes_idx_to_id, genes_id_to_idx
+
+def get_root_path():
+    return path.dirname(path.realpath(__file__))

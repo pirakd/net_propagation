@@ -26,11 +26,11 @@ class Args:
         self.date = None
 
         # propagation parameters
-        self.alpha = 0.8
+        self.alpha = 0.9
         self.n_max_iterations = 200
         self.convergence_th = 1e-5
         self.test_name = test_name
-        self.remove_self_propagation = False
+        self.remove_self_propagation = True
 
         # post processing arguments
         self.normalization_method = 'ones'  #ones\EC
@@ -82,37 +82,39 @@ class Args:
         self.condition_function = get_condition_function(self.condition_function_name)
 
 
-class CovArgs(Args):
+class DeltaArgs(Args):
     def __init__(self, test_name=None, is_create_output_folder=True):
         super().__init__(is_create_output_folder=False)
-        self.data_file = 'cov_data_old'
+        self.propagation_folder = 'propagation_scores'
+        self.experiment_file = 'delta_scores.xlsx'
         self.network_file = 'H_sapiens.net'
-        self.sheet_name = 'India2_24h-IC19_24h'
-        self.propagation_input_type = 'ones'
+        self.sheet_name = 'India2_10h-IC19_10h'
+        self.propagation_input_type = 'Score'
         self.condition_function_name = 'cov_data'
         self.interesting_pathway_file = 'interesting_pathways.txt'
-        self.genes_names_file = 'H_sapiens_symbol'
+        self.genes_names_file = 'H_sapiens_uniprot'
         self.test_name = test_name
         self.remove_self_propagation = True
         self.get_derived_parameters(is_create_output_folder=is_create_output_folder)
 
 
-class CovArgs(Args):
+class KentArgs(Args):
     def __init__(self, test_name=None, is_create_output_folder=True):
         super().__init__(is_create_output_folder=False)
-        self.data_file = 'cov_data_old'
+        self.experiment_file = 'kent_scores.xlsx'
         self.network_file = 'H_sapiens.net'
-        self.sheet_name = 'India2_24h-IC19_24h'
-        self.propagation_input_type = 'ones'
+        self.sheet_name = 'Kent_24h-VIC_24h'
+        self.propagation_input_type = 'Score'
         self.condition_function_name = 'cov_data'
         self.interesting_pathway_file = 'interesting_pathways.txt'
         self.genes_names_file = 'H_sapiens_symbol'
         self.test_name = test_name
         self.remove_self_propagation = True
+        self.propagation_folder = 'propagation_scores_pvalue'
         self.get_derived_parameters(is_create_output_folder=is_create_output_folder)
 
 class MockArgs(Args):
-    def __init__(self, test_name=None, is_create_output_folder=True):
+    def __init__(self, test_name='test', is_create_output_folder=False):
         super().__init__(is_create_output_folder=False)
         self.experiment_file = 'mock_scores.xlsx'
         self.network_file = 'H_sapiens.net'
@@ -157,4 +159,4 @@ if __name__ == '__main__':
     default_args = Args()
 
     # instantiate an argument object with covid preset
-    cov_args = CovArgs()
+    cov_args = Args()

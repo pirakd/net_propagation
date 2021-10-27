@@ -2,17 +2,18 @@ from args import Args, MockArgs
 from os import path
 from statistic_methods import wilcoxon_rank_sums_test, bh_correction
 from utils import read_network, load_interesting_pathways, load_pathways_genes, get_propagation_input, read_prior_set,\
-    convert_symbols_to_ids, load_propagation_scores, create_output_folder
+    convert_symbols_to_ids, load_propagation_scores, create_output_folder, get_root_path
 import numpy as np
 from visualization_tools import plot_enrichment_table
 
 
 class PropagationTask:
-    def __init__(self, name, propagation_file, normalization_file, statistic_test, target_field,
+    def __init__(self, name, propagation_file, propagation_folder, normalization_file, statistic_test, target_field,
                  normalization_method, constrain_to_experiment_genes, add_self_propagation=False,
                  normalize_scores=True):
         self.name = name
         self.propagation_file = propagation_file
+        self.propagation_scores_path = path.join(get_root_path(), propagation_folder)
         self.normalization_file = normalization_file
         self.statistic_test = statistic_test
         self.target_field = target_field
@@ -21,12 +22,12 @@ class PropagationTask:
         self.constrain_to_experiment_genes = constrain_to_experiment_genes
         self.add_self_propagation = add_self_propagation
         self.add_self_propagation_to_norm_factor = add_self_propagation
+        self.add_self_propagation_to_norm_factor = False
         self.results = dict()
-
 
 class RawScoreTask:
     def __init__(self, name, score_file_path, sheet_name, statistic_test, condition_function, propagation_input_type,
-                 constrain_to_network_genes=True):
+                  constrain_to_network_genes=True):
         self.name = name
         self.score_file_path = score_file_path
         self.sheet_name = sheet_name
@@ -57,7 +58,6 @@ class GeneralArgs:
         self.figure_title = figure_title
 
 
-
 class PathwayResults:
     def __init__(self):
         self.p_value = None
@@ -73,24 +73,22 @@ def run(task_list, general_args):
 
     # load interesting pathways and pathway members
     if general_args.interesting_pathway_path is not None:
-        intersting_pathways = load_interesting_pathways(general_args.interesting_pathway_path)
+        interesting_pathways = load_interesting_pathways(general_args.interesting_pathway_path)
     else:
-        intersting_pathways = None
+        interesting_pathways = None
 
-    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path, intersting_pathways)
-    if intersting_pathways is None:
-        intersting_pathways = list(genes_by_pathway.keys())
+    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path, interesting_pathways)
+    if interesting_pathways is None:
+        interesting_pathways = list(genes_by_pathway.keys())
 
-    intersting_pathways = {x for x in intersting_pathways if
+    interesting_pathways = {x for x in interesting_pathways if
                                     any(key in x for key in general_args.pathway_databases)}
-    intersting_pathways = {x for x in intersting_pathways if
+    interesting_pathways = {x for x in interesting_pathways if
                                     any(str.upper(key) in x for key in general_args.pathway_keywords)}
 
-    names_to_ids =  convert_symbols_to_ids(genes_names_file_path=general_args.genes_names_file_path)
-    ids_to_names = {xx: x for x, xx in names_to_ids.items()}
     pathways_to_display = set()
-
     for task in task_list:
+
         # load scores
         if isinstance(task, RawScoreTask):
             all_genes, all_data, _ = read_prior_set(task.condition_function, task.score_file_path, task.sheet_name)
@@ -98,22 +96,20 @@ def run(task_list, general_args):
             scores = get_propagation_input(all_genes_dict, all_data, task.propgation_input_type, network=network_graph)
 
         elif isinstance(task, PropagationTask):
-            args = Args(is_create_output_folder=False)
-            args.normalization_method = task.normalization_method
-            args.add_self_prop_to_norm_factor = task.add_self_propagation_to_norm_factor
-            scores, genes_idx_to_id, genes_id_to_idx, propagation_input = load_propagation_scores(args,
-                                                                      add_self_propagation=task.add_self_propagation,
-                                                                      normalization_file_name=task.normalization_file,
-                                                                      normalize_score=task.normalize_scores,
-                                                                      propagation_file_name=task.propagation_file)
+            res_dict = load_propagation_scores(task, add_self_propagation=task.add_self_propagation,
+                                               normalization_file_name=task.normalization_file,
+                                               normalize_score=task.normalize_scores,
+                                               propagation_file_name=task.propagation_file)
+            gene_id_to_idx = {xx: x for x, xx in res_dict['gene_idx_to_id'].items()}
+            scores = res_dict[task.target_field]
             if task.constrain_to_experiment_genes:
-                genes_id_to_idx = {id: idx for id, idx in genes_id_to_idx.items() if id in propagation_input}
-            scores = {id:scores[idx] for id, idx in genes_id_to_idx.items()}
+                gene_id_to_idx = {id: idx for id, idx in gene_id_to_idx.items() if id in res_dict['propagation_input']}
+            scores = {id:scores[idx] for id, idx in gene_id_to_idx.items()}
         else:
             assert 0, 'invalid task'
         # filter genes for each pathway
         genes_by_pathway_filtered = {pathway: [id for id in genes_by_pathway[pathway] if id in scores] for pathway
-                                          in intersting_pathways}
+                                          in interesting_pathways}
         # keep only pathway with certain amount of genes
         pathways_with_many_genes = [pathway_name for pathway_name in genes_by_pathway_filtered.keys() if
                                     (len(genes_by_pathway_filtered[pathway_name]) >= general_args.minimum_gene_per_pathway)]
@@ -174,8 +170,9 @@ if __name__ == '__main__':
                           condition_function=args.condition_function, propagation_input_type='Score')
 
     task_2 = PropagationTask(name='Propagation Enrichment', propagation_file=propagation_scores_file,
+                             propagation_folder='propagation_scores',
                              normalization_file=normalization_score_file, statistic_test=wilcoxon_rank_sums_test,
-                             target_field='gene_score', normalization_method='EC', constrain_to_experiment_genes=True)
+                             target_field='gene_prop_score', normalization_method='EC', constrain_to_experiment_genes=True)
 
     general_args = GeneralArgs(args.network_file_path, genes_names_path=args.genes_names_file_path,
                                interesting_pathway_path=args.interesting_pathway_file_dir,
