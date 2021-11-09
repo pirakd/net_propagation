@@ -39,7 +39,6 @@ for idx, id in enumerate(list(propagation_input.keys())):
     # if id in significant_genes_ids:
     gene_scores.append(propagate([id], ones_input, matrix, gene_indexes, num_genes, args))
     self_prop_scores[gene_indexes[id]] = gene_scores[-1][gene_indexes[id]]
-    gene_scores[-1][gene_indexes[id]] = 0
 
 one_scores = np.array(gene_scores)
 inputs = np.array([val for val in propagation_input.values()])[:, np.newaxis]
