@@ -38,7 +38,7 @@ for idx, id in enumerate(list(ones_input.keys())):
     # if id in significant_genes_ids:
     gene_scores.append(propagate([id], ones_input, matrix, gene_indexes, num_genes, args))
     self_prop_scores[gene_indexes[id]] = gene_scores[-1][gene_indexes[id]]
-    # gene_scores[-1][gene_indexes[id]] = 0
+
 
 one_scores = np.array(gene_scores)
 inputs = np.array([val for val in propagation_input.values()])[:, np.newaxis]
@@ -58,7 +58,7 @@ n_experiments = random_scores.shape[0]
 sorted_scores = np.sort(random_scores, axis=0)
 
 file_name = '{}_{}_{}_{}_{}_IPN'.format(args.propagation_input_type, args.experiment_name, args.sheet_name,
-                                        args.condition_function_name, str(args.alpha))
+                                        args.experiment_reader_name, str(args.alpha))
 
 save_propagation_score(propagation_scores=gene_scores, prior_set=prior_set, propagation_input=propagation_input,
                        genes_idx_to_id=genes_idx_to_id, args=args, self_propagation=self_prop_scores,

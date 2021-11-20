@@ -178,7 +178,7 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
         date = args.date
     if file_name is None:
         file_name = '{}_{}_{}_{}_{}'.format(args.propagation_input_type, args.experiment_name, args.sheet_name,
-                                         args.condition_function_name, str(args.alpha))
+                                         args.experiment_reader_name, str(args.alpha))
 
     if save_dir is None:
         os.makedirs(args.propagation_scores_path, exist_ok=True)
@@ -200,7 +200,7 @@ def load_propagation_scores(args, add_self_propagation=False, normalize_score = 
                             normalization_file_name=None):
 
     if propagation_file_name is None:
-        propagation_file_name = '{}_{}_{}_{}_{}'.format(args.propagation_input_type, args.experiment_name, args.sheet_name, args.condition_function_name,
+        propagation_file_name = '{}_{}_{}_{}_{}'.format(args.propagation_input_type, args.experiment_name, args.sheet_name, args.experiment_reader_name,
                                                      str(args.alpha))
 
     propagation_results_path = path.join(args.propagation_scores_path, propagation_file_name)
@@ -224,10 +224,10 @@ def normalize_propagation_scores(gene_scores, genes_idx_to_id, args, normalizati
     if normalization_file_name is None:
         if args.normalization_method == 'EC':
             normalization_file_name = '{}_{}_{}_{}_1'.format(args.propagation_input_type, args.experiment_name,
-                                                             args.sheet_name, args.condition_function_name)
+                                                             args.sheet_name, args.experiment_reader_name)
         else:
             normalization_file_name = 'ones_{}_{}_{}_{}'.format(args.experiment_name, args.sheet_name,
-                                                                args.condition_function_name, args.alpha)
+                                                                args.experiment_reader_name, args.alpha)
 
     propagation_norm_res_path = path.join(args.propagation_scores_path, normalization_file_name)
     norm_propagation_res_dict = load_file(propagation_norm_res_path, decompress=True)
