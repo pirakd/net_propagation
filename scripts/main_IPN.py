@@ -8,6 +8,7 @@ from propagation_routines import propagate_network, generate_similarity_matrix, 
 from args import MockArgs, DeltaArgs
 import numpy as np
 
+
 test_name = path.basename(__file__).split('.')[0]
 args = DeltaArgs(test_name, is_create_output_folder=False)
 n_randomizations = 1000
@@ -15,11 +16,11 @@ n_randomizations = 1000
 network_graph = utils.read_network(args.network_file_path)
 fc_scores_dict = dict(p_vals=list(), adj_p_vals=list(), direction=list())
 
-prior_set, prior_data, all_data = args.experiment_reader(args)
+prior_set, prior_data, _ = args.experiment_reader(args)
 prior_gene_dict = utils.convert_symbols_to_ids(prior_set, args.genes_names_file_path)
 prior_set_ids = set.intersection(set(prior_gene_dict.values()), set(network_graph.nodes))
 
-all_genes = list(all_data.Gene_Name)
+all_genes = list(prior_data.Gene_Name)
 all_genes_ids_dict = utils.convert_symbols_to_ids(all_genes, args.genes_names_file_path)
 all_genes_ids = set.intersection(set(all_genes_ids_dict.values()), set(network_graph.nodes))
 
@@ -38,7 +39,6 @@ for idx, id in enumerate(list(ones_input.keys())):
     # if id in significant_genes_ids:
     gene_scores.append(propagate([id], ones_input, matrix, gene_indexes, num_genes, args))
     self_prop_scores[gene_indexes[id]] = gene_scores[-1][gene_indexes[id]]
-
 
 one_scores = np.array(gene_scores)
 inputs = np.array([val for val in propagation_input.values()])[:, np.newaxis]
