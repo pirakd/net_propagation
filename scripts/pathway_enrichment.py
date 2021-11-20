@@ -1,7 +1,7 @@
 from args import Args, MockArgs
 from os import path
 from statistic_methods import wilcoxon_rank_sums_test, bh_correction
-from utils import read_network, load_interesting_pathways, load_pathways_genes, get_propagation_input, read_prior_set,\
+from utils import read_network, load_interesting_pathways, load_pathways_genes, get_propagation_input,\
     convert_symbols_to_ids, load_propagation_scores, create_output_folder, get_root_path
 import numpy as np
 from visualization_tools import plot_enrichment_table
@@ -26,13 +26,13 @@ class PropagationTask:
         self.results = dict()
 
 class RawScoreTask:
-    def __init__(self, name, score_file_path, sheet_name, statistic_test, condition_function, propagation_input_type,
+    def __init__(self, name, experiment_file_path, sheet_name, statistic_test, experiment_reader, propagation_input_type,
                   constrain_to_network_genes=True):
         self.name = name
-        self.score_file_path = score_file_path
+        self.experiment_file_path = experiment_file_path
         self.sheet_name = sheet_name
         self.statistic_test = statistic_test
-        self.condition_function = condition_function
+        self.experiment_reader = experiment_reader
         self.propgation_input_type = propagation_input_type
         self.constrain_to_experiment = constrain_to_network_genes
         self.results = dict()
@@ -91,7 +91,7 @@ def run(task_list, general_args):
 
         # load scores
         if isinstance(task, RawScoreTask):
-            all_genes, all_data, _ = read_prior_set(task.condition_function, task.score_file_path, task.sheet_name)
+            all_genes, all_data, _ = task.experiment_reader(task)
             all_genes_dict = convert_symbols_to_ids(all_genes, general_args.genes_names_file_path)
             scores = get_propagation_input(all_genes_dict, all_data, task.propgation_input_type, network=network_graph)
 
@@ -165,9 +165,9 @@ if __name__ == '__main__':
     propagation_scores_file = 'ones_mock_scores_Table_A_cov_data_0.9'
     normalization_score_file = 'ones_mock_scores_Table_A_cov_data_0.9'
 
-    task_1 = RawScoreTask(name='Raw Enrichment', score_file_path=args.experiment_file_path,
+    task_1 = RawScoreTask(name='Raw Enrichment', experiment_file_path=args.experiment_file_path,
                           sheet_name='Table_A', statistic_test=wilcoxon_rank_sums_test,
-                          condition_function=args.condition_function, propagation_input_type='Score')
+                          experiment_reader=args.experiment_reader, propagation_input_type='Score')
 
     task_2 = PropagationTask(name='Propagation Enrichment', propagation_file=propagation_scores_file,
                              propagation_folder='propagation_scores',

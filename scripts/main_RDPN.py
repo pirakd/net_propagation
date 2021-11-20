@@ -2,7 +2,7 @@ import sys
 from os import path
 sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
 import utils as utils
-from utils import read_prior_set, get_propagation_input, save_propagation_score, get_time
+from utils import get_propagation_input, save_propagation_score, get_time
 from statistic_methods import get_sample_p_values, bh_correction
 from propagation_routines import propagate_network, propagate_networks, propagate_networks_parallel
 from args import Args, MockArgs
@@ -15,7 +15,7 @@ n_processes = 2
 network_graph = utils.read_network(args.network_file_path)
 
 #Load prior set
-prior_set, prior_data, _ = read_prior_set(args.condition_function, args.experiment_file_path, args.sheet_name)
+prior_set, prior_data, _ = args.experiment_reader(args)
 
 prior_gene_dict = utils.convert_symbols_to_ids(prior_set)
 prior_set_ids = list(prior_gene_dict.values())

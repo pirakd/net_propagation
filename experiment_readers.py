@@ -1,13 +1,14 @@
 import pandas as pd
 
-def get_condition_function(function_name:str):
+def get_experiment_reader(function_name:str):
     try:
         return eval(function_name)
     except:
         assert 0, '{} is not a valid condition'.format(function_name)
 
 
-def huntington_DDA(data_frame):
+def huntington_DDA(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
 
@@ -23,7 +24,8 @@ def huntington_DDA(data_frame):
     return prior_genes, all_data, all_data
 
 
-def huntington_DDA_significant(data_frame):
+def huntington_DDA_significant(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
 
@@ -38,7 +40,8 @@ def huntington_DDA_significant(data_frame):
     return prior_genes, data, all_data
 
 
-def colorectal_cancer(data_frame):
+def colorectal_cancer(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
     all_data = all_data[~(all_data['Score'] > 300)]
@@ -56,7 +59,8 @@ def colorectal_cancer(data_frame):
     return prior_genes, all_data, all_data
 
 
-def colorectal_cancer_significant(data_frame):
+def colorectal_cancer_significant(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
 
@@ -72,7 +76,8 @@ def colorectal_cancer_significant(data_frame):
     return prior_genes, data, all_data
 
 
-def cov_data(data_frame):
+def cov_data(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
 
@@ -97,7 +102,8 @@ def cov_data(data_frame):
     prior_genes = list(all_data.Gene_Name)
     return prior_genes, all_data, all_data
 
-def cov_data_significant(data_frame):
+def cov_data_significant(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
 
@@ -124,7 +130,8 @@ def cov_data_significant(data_frame):
     return prior_genes, data, all_data
 
 
-def yeast_data(data_frame):
+def yeast_data(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name)
     all_data = data_frame[~data_frame['Score'].isnull()]
     all_data = all_data[~all_data.Gene_Name.isnull()]
 
@@ -148,3 +155,31 @@ def yeast_data(data_frame):
     all_data = all_data.drop_duplicates(subset=['Gene_Name'])
     prior_genes = list(all_data.Gene_Name)
     return prior_genes, all_data, all_data
+
+
+def prostate_data(args):
+    data_frame = pd.read_excel(args.experiment_file_path, engine='openpyxl', sheet_name=args.sheet_name,
+                               usecols=['Gene_Name', args.propagation_input_type])
+    all_data = data_frame[~data_frame.Gene_Name.isnull()]
+
+    # keep only first name of genes with aliases
+    gene_with_aliases = all_data.Gene_Name.str.contains(';')
+    if gene_with_aliases.any():
+        gene_with_aliases = all_data.Gene_Name.str.contains(';')
+        gene_with_aliases_indexes = gene_with_aliases.to_numpy().nonzero()[0]
+        if len(gene_with_aliases):
+            aliases_list = list(all_data[gene_with_aliases].Gene_Name)
+            aliases_list_split = [x.split(';') for x in aliases_list]
+            first_aliases = [x[0] for x in aliases_list_split]
+            all_data = all_data.replace(aliases_list, first_aliases)
+
+            for i, idx in enumerate(gene_with_aliases_indexes):
+                entry = all_data.iloc[[idx], :]
+                for alias in aliases_list_split[i][1:]:
+                    entry.at[idx, 'Gene_Name'] = alias
+                    all_data = all_data.append(entry)
+
+    all_data = all_data.drop_duplicates(subset=['Gene_Name'])
+    data = all_data[['Gene_Name', args.propagation_input_type]]
+    prior_genes = list(all_data.Gene_Name)
+    return prior_genes, data, None

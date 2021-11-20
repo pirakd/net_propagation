@@ -83,12 +83,6 @@ def load_file(load_dir, decompress=True):
         return file
 
 
-def read_prior_set(condition_fucntion, excel_dir, sheet_name,):
-    # xls = pd.ExcelFile(excel_dir)
-    data_frame = pd.read_excel(excel_dir, engine='openpyxl', sheet_name=sheet_name)
-    prior_set, prior_data, reference_data = condition_fucntion(data_frame)
-    return prior_set, prior_data, reference_data
-
 
 def create_output_folder(test_name):
     time = get_time()
@@ -163,7 +157,10 @@ def get_propagation_input(prior_gene_dict, prior_data, input_type, network):
             if id not in inputs:
                 inputs[id] = 1
     else:
-        assert 0, '{} is not a valid input type'.format(input_type)
+        try:
+            inputs = {id: float(prior_data[prior_data.Gene_Name == name][input_type]) for name, id in prior_gene_dict.items()}
+        except KeyError:
+            assert 0, '{} is not a valid input type'.format(input_type)
 
     inputs = {id: input_score for id, input_score in inputs.items() if id in network.nodes}
     return inputs
@@ -229,7 +226,7 @@ def normalize_propagation_scores(gene_scores, genes_idx_to_id, args, normalizati
             normalization_file_name = '{}_{}_{}_{}_1'.format(args.propagation_input_type, args.experiment_name,
                                                              args.sheet_name, args.condition_function_name)
         else:
-            normalization_file_name = 'ones_{}_{}_{}_{}'.format(args.sheet_name, args.experiment_name,
+            normalization_file_name = 'ones_{}_{}_{}_{}'.format(args.experiment_name, args.sheet_name,
                                                                 args.condition_function_name, args.alpha)
 
     propagation_norm_res_path = path.join(args.propagation_scores_path, normalization_file_name)
