@@ -7,10 +7,10 @@ from utils import get_propagation_input, save_propagation_score
 from propagation_routines import propagate_network, generate_similarity_matrix, propagate
 from args import MockArgs, DeltaArgs
 import numpy as np
-
+from tqdm import tqdm
 
 test_name = path.basename(__file__).split('.')[0]
-args = DeltaArgs(test_name, is_create_output_folder=False)
+args = MockArgs(test_name, is_create_output_folder=False)
 n_randomizations = 1000
 
 network_graph = utils.read_network(args.network_file_path)
@@ -35,7 +35,7 @@ gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
 genes_idx_to_id = {xx: x for x, xx in gene_indexes.items()}
 gene_scores = list()
 self_prop_scores = np.zeros(num_genes)
-for idx, id in enumerate(list(ones_input.keys())):
+for id in tqdm(list(ones_input.keys()), desc='Propagating...', total=len(ones_input.keys())):
     # if id in significant_genes_ids:
     gene_scores.append(propagate([id], ones_input, matrix, gene_indexes, num_genes, args))
     self_prop_scores[gene_indexes[id]] = gene_scores[-1][gene_indexes[id]]
@@ -45,9 +45,7 @@ inputs = np.array([val for val in propagation_input.values()])[:, np.newaxis]
 true_score = np.sum(one_scores * inputs, axis=0)
 
 random_scores = []
-for i in range(n_randomizations):
-    if np.mod(i, 100) == 0:
-        print('finished {} randomization'.format(i))
+for i in tqdm(range(n_randomizations), desc='Propagating random scores...', total=n_randomizations):
     random_permutation = np.random.permutation(inputs)
     random_scores.append(np.sum(one_scores * random_permutation, axis=0))
 
