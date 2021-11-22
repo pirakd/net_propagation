@@ -47,7 +47,8 @@ true_score = np.sum(one_scores * inputs, axis=0)
 random_scores = []
 for i in tqdm(range(n_randomizations), desc='Propagating random scores...', total=n_randomizations):
     random_permutation = np.random.permutation(inputs)
-    random_scores.append(np.sum(one_scores * random_permutation, axis=0))
+    # this is a quicker equivalent to np.sum(one_scores * random_permutation, axis=0)
+    random_scores.append(np.einsum('ij,ik->j', one_scores, random_permutation))
 
 random_scores = np.array(random_scores)
 p_values, _, ranks = get_sample_p_values(true_score, random_scores, two_tailed=True)
@@ -58,7 +59,7 @@ sorted_scores = np.sort(random_scores, axis=0)
 file_name = '{}_{}_{}_{}_{}_IPN'.format(args.propagation_input_type, args.experiment_name, args.sheet_name,
                                         args.experiment_reader_name, str(args.alpha))
 
-save_propagation_score(propagation_scores=gene_scores, prior_set=prior_set, propagation_input=propagation_input,
+save_propagation_score(propagation_scores=true_score, prior_set=prior_set, propagation_input=propagation_input,
                        genes_idx_to_id=genes_idx_to_id, args=args, self_propagation=self_prop_scores,
                        randomization_ranks=ranks, n_randomizations=n_randomizations, scores_p_values=p_values,
                        file_name=file_name)
