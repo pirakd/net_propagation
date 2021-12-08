@@ -2,6 +2,7 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 import os
+import json
 import pickle as pl
 from os import path
 from datetime import datetime
@@ -254,5 +255,33 @@ def normalize_propagation_scores(gene_scores, genes_idx_to_id, args, normalizati
 
     return gene_scores, genes_idx_to_id, genes_id_to_idx
 
+
 def get_root_path():
     return path.dirname(path.realpath(__file__))
+
+
+def save_args(args, save_folder:str=None):
+    if save_folder is None:
+        save_folder = args.output_folder
+    save_file_path = path.join(save_folder, 'args.txt')
+    save_dict = {}
+    for key, value in args.__dict__.items():
+        if key != 'experiment_reader':
+            save_dict[key] = value
+    with open(save_file_path, 'w') as f:
+        json.dump(save_dict, f, indent=4, separators=(',', ': '))
+
+    print('arguments were saved in {}'.format(save_file_path))
+    return save_file_path
+
+
+def load_args(args_path):
+    with open(args_path, 'r') as f:
+        arguments_dict = json.load(f)
+    from args import Args
+    args = Args()
+    for key, value in arguments_dict.items():
+        setattr(args, key, value)
+
+    args.set_experiment_reader()
+    return args
