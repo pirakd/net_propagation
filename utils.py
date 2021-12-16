@@ -285,3 +285,50 @@ def load_args(args_path):
 
     args.set_experiment_reader()
     return args
+
+def remove_outlier_vertices(network_graph, threshold):
+    degree = dict(network_graph.degree(weight=2))
+    nodes = list(network_graph.nodes())
+
+    for id in nodes:
+        if degree[id] > threshold:
+            network_graph.remove_node(id)
+    nodes = list(network_graph.nodes())
+    degree = dict(network_graph.degree(weight=2))
+    for id in nodes:
+        if degree[id] == 0:
+            network_graph.remove_node(id)
+    return network_graph
+
+
+def generate_bins(vertices_scores_dict, precision=1, min_bin_size=20):
+    """
+    A function that
+    :param vertices_scores_dict: a dictionary of the form gene_id:score
+    :param precision: precision of quantization of scores. for integers scores set to 1.
+    :param min_bin_size: minimum bin size
+    :return: [bins : list if members of each bin, size: max(abs(score))*(10**precision),
+              id_to_bin: a mapping of gene_id to its bins
+    """
+    scores = np.array([score for id, score in vertices_scores_dict.items()])
+
+    ones_centrality_quant = np.ceil(scores * (10 ** (precision))).astype(int)
+    genes_idx_to_id_experiment = {idx: id for idx, id in enumerate(vertices_scores_dict.keys())}
+    bins_of_vertices = ones_centrality_quant - np.min(ones_centrality_quant)
+    id_to_bin = {id: bins_of_vertices[idx] for idx, id in enumerate(vertices_scores_dict.keys())}
+    bins = [[] for _ in np.arange(np.max(bins_of_vertices) + 1)]
+    # bins_edge_values = np.arange(np.min(ones_centrality_quant)-0.5,np.max(ones_centrality_quant)+0.5)
+
+    for idx, value in enumerate(bins_of_vertices):
+        bins[value].append(idx)
+
+    for bin_idx, bin in enumerate(bins):
+        if len(bin):
+            if len(bin) < min_bin_size:
+                bins[bin_idx] = [genes_idx_to_id_experiment[idx] for idx in
+                                 np.argsort(np.abs(bins_of_vertices - bin_idx))[:min_bin_size]]
+            else:
+                bins[bin_idx] = [genes_idx_to_id_experiment[idx] for idx in bin]
+
+    return bins, id_to_bin
+
