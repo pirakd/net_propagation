@@ -1,6 +1,6 @@
 import sys
 from os import path
-sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
+sys.path.append(path.dirname(path.dirname(path.dirname(path.realpath(__file__)))))
 from utils import save_file, read_network, read_network_create_graph
 import networkx as nx
 verbosity = True

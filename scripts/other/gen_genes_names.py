@@ -3,10 +3,10 @@ This script creates a name-id mapping of all genes in the network and saves it a
 """
 import sys
 from os import path
-sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
+sys.path.append(path.dirname(path.dirname(path.dirname(path.realpath(__file__)))))
 import utils as utils
 import numpy as np
-from args import Args
+from args import Args, HAP40
 import mygene
 import json
 import pandas as pd
@@ -14,11 +14,10 @@ import pandas as pd
 
 def load_names_from_net(gene_ids_to_search, name_type):
     mg = mygene.MyGeneInfo()
-    query_output = mg.querymany(gene_ids_to_search, scopes="entrezgene", fields=["entrezgene",  name_type], species=4932)
+    query_output = mg.querymany(gene_ids_to_search, scopes="entrezgene", fields=["entrezgene",  name_type], species=9606)
 
     ids_found, ids_not_found = [], []
     for g,gene in enumerate(query_output):
-        a = len(ids_found)
         if 'notfound' in gene or name_type not in gene:
             ids_not_found.append(gene['query'])
         else:
@@ -39,7 +38,7 @@ def load_names_from_net(gene_ids_to_search, name_type):
 
 args = Args(is_create_output_folder=False)
 name_type = 'symbol'
-network_graph = utils.read_network(args.network_file)
+network_graph = utils.read_network(args.network_file_path)
 genes_ids = list(network_graph.nodes())
 name_to_id = load_names_from_net(genes_ids, name_type)
 

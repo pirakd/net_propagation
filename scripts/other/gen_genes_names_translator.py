@@ -3,16 +3,16 @@ This script creates a name-id mapping of all genes in the network and saves it a
 """
 import sys
 from os import path
-sys.path.append(path.dirname(path.dirname(path.realpath(__file__))))
+sys.path.append(path.dirname(path.dirname(path.dirname(path.realpath(__file__)))))
 import utils as utils
 from args import Args, HAP40
 
 import json
 from gene_name_translator.gene_translator import GeneTranslator
 gs = GeneTranslator()
+# gs.generate_dictionaries()
 gs.load_dictionary()
-gs.load_old_entrez_ids_from_file()
-args = HAP40(is_create_output_folder=False)
+args = Args(is_create_output_folder=False)
 name_type = 'symbol'
 network_graph = utils.read_network(args.network_file_path)
 genes_ids = list(network_graph.nodes())

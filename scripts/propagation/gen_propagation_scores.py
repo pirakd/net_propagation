@@ -11,7 +11,7 @@ from args import MockArgs, KentArgs
 import numpy as np
 
 propagation_results_dir = path.join('output', 'propagation_results')
-args = KentArgs(None, is_create_output_folder=False)
+args = MockArgs(None, is_create_output_folder=False)
 
 network_graph = utils.read_network(args.network_file_path)
 
