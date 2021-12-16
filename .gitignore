@@ -11,7 +11,7 @@ output/*
 random_networks/*
 handouts/*
 untracked_files/*
-*/output/*
+*output*
 propagation_scores/*
 /scripts/scratches/*
 /scripts/Enrichr/*
