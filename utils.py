@@ -2,7 +2,6 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 import os
-import json
 import pickle as pl
 from os import path
 from datetime import datetime
@@ -317,7 +316,6 @@ def generate_bins(vertices_scores_dict, precision=1, min_bin_size=20):
     bins_of_vertices = ones_centrality_quant - np.min(ones_centrality_quant)
     id_to_bin = {id: bins_of_vertices[idx] for idx, id in enumerate(vertices_scores_dict.keys())}
     bins = [[] for _ in np.arange(np.max(bins_of_vertices) + 1)]
-    # bins_edge_values = np.arange(np.min(ones_centrality_quant)-0.5,np.max(ones_centrality_quant)+0.5)
 
     for idx, value in enumerate(bins_of_vertices):
         bins[value].append(idx)
@@ -332,3 +330,10 @@ def generate_bins(vertices_scores_dict, precision=1, min_bin_size=20):
 
     return bins, id_to_bin
 
+def moving_average(arr, k):
+    cumsum = np.cumsum(arr)
+    moving_average = (cumsum[k:] - cumsum[:-k]) / k
+    left_edge = cumsum[:k] / np.arange(1,k+1)
+    moving_average = np.insert(moving_average, 0, left_edge)
+
+    return moving_average
