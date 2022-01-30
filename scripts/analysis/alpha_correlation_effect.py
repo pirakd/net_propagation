@@ -13,11 +13,17 @@ from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 
 test_name = path.basename(__file__).split('.')[0]
-args = CovJanArgs(test_name, is_create_output_folder=True)
+
+args = CovPhosJanArgs(test_name, is_create_output_folder=True)
+args.propagation_input_type = 'Score'
+args.sheet_name = 'DeltaE_10h-VIC_10h'
+args.get_derived_parameters()
+title = 'Phospho, {}, {}'.format(args.propagation_input_type, args.sheet_name)
+
 n_randomizations = 1000
 precision = 6
 min_bin_size = 100
-alpha_list = [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1]
+alpha_list = [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]
 
 network_graph = utils.read_network(args.network_file_path)
 prior_set, prior_data, _ = args.experiment_reader(args)
@@ -48,9 +54,9 @@ for alpha in alpha_list:
     values = list(propagation_input.values())
     random_scores = list()
     for i in tqdm(range(n_randomizations), desc='Propagating random scores', total=n_randomizations):
-        # shuffle(values)
-        values = np.random.choice(values, len(propagation_input))
-        shuffled_input = dict(zip(propagation_input.keys(),values))
+        shuffled_values = np.random.choice(values, len(values))
+        # values = np.random.choice(values, len(propagation_input))
+        shuffled_input = dict(zip(propagation_input.keys(), shuffled_values))
         random_scores.append(propagate([id for id in propagation_input.keys()], shuffled_input, matrix, genes_id_to_idx, num_genes
                                        , args))
 
@@ -64,7 +70,7 @@ for alpha in alpha_list:
     bins, id_to_bin = generate_bins(weight_dict, precision, min_bin_size)
 
     random_scores = list()
-    for i in tqdm(range(n_randomizations), desc='Propagating random scores', total=n_randomizations):
+    for i in tqdm(range(n_randomizations), desc='Propagating random scores with bins', total=n_randomizations):
         shuffled_input = {}
         for id in propagation_input.keys():
                 shuffled_input[id] = propagation_input[np.random.choice(bins[id_to_bin[id]], 1)[0]]
@@ -92,6 +98,7 @@ x_positions = np.arange(1,len(alpha_list)+1)
 
 
 fig, axs = plt.subplots(2,1)
+plt.suptitle(title)
 axs[0].set_title('Centrality Correlation', fontsize=font_size)
 axs[0].scatter(x_positions, ipn_centrality_cor, label='Permutation correlation')
 axs[0].scatter(x_positions, bin_centrality_cor, label='Permutation with binning correlation')
@@ -116,4 +123,3 @@ axs[1].grid()
 fig.tight_layout()
 fig.set_size_inches(14, 10, forward=True)
 plt.savefig(path.join(args.output_folder, test_name))
-plt.show()

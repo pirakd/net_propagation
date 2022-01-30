@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 test_name = path.basename(__file__).split('.')[0]
 args = CovPhosJanArgs(test_name, is_create_output_folder=True)
 args.propagation_input_type = 'Score'
-n_randomizations = 1000
 args.sheet_name = 'DeltaE_10h-VIC_10h'
+n_randomizations = 1000
 precision = 6
 bin_size_list = [30, 50, 100, 200, 500, 1000]
 alpha = 0.8
-title = 'Phospho, Signed input, {}'.format(args.sheet_name)
+title = 'Phospho, {}, {}'.format(args.propagation_input_type, args.sheet_name)
 
 network_graph = utils.read_network(args.network_file_path)
 prior_set, prior_data, _ = args.experiment_reader(args)
